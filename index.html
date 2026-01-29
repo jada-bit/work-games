@@ -3,603 +3,639 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Focus Anchor</title>
+    <title>NOLA Bach Tracker</title>
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <!-- React & ReactDOM -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
     <!-- Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
-        .font-mono { font-family: 'JetBrains Mono', monospace; }
-        /* Custom scrollbar for log area */
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 overflow-hidden">
+<body class="bg-slate-50 text-slate-900">
     <div id="root"></div>
 
-    <script type="text/babel" data-type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-        import { getAuth, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+    <script type="text/babel">
+        const { useState, useMemo } = React;
 
-        const { useState, useEffect, useRef, useCallback } = React;
-
-        // --- CONFIGURATION ---
-        // If hosting on GitHub, replace the object below with your actual Firebase config keys.
-        // You can get these from your Firebase Console > Project Settings.
-        const firebaseConfig = typeof __firebase_config !== 'undefined' 
-            ? JSON.parse(__firebase_config) 
-            : {
-                apiKey: "AIzaSyCPriOIZnHKU3Skg9A8f-5Xj7w-Q0K42uo",
-                authDomain: "work-games-ab947.firebaseapp.com",
-                projectId: "work-games-ab947",
-                storageBucket: "work-games-ab947.firebasestorage.app",
-                messagingSenderId: "889667653874",
-                appId: "1:889667653874:web:e908736606d70fdd6c006b"
-              };
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'focus-anchor-web';
-        
-        // Initialize Firebase
-        let app, auth, db;
-        try {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-        } catch (e) {
-            console.warn("Firebase not configured correctly. App will run in offline mode.", e);
-        }
-
-        // --- GEMINI AI API ---
-        const generateContent = async (prompt) => {
-            // Note: In a public GitHub repo, you shouldn't expose your API key directly in client-side code.
-            // For this demo, we mock the AI response if no key is present.
-            const apiKey = ""; // Insert key if testing locally, but be careful publishing!
-            if (!apiKey) {
-                console.log("No AI Key provided. Using mock response.");
-                return null;
-            }
-            try {
-                const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-                }
-                );
-                const data = await response.json();
-                return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
-            } catch (error) {
-                console.error("AI Error:", error);
-                return null;
-            }
-        };
-
-        // --- ICONS (SVG Components) ---
-        // Simplified replacement for Lucide-React to avoid build steps
-        const Icon = ({ path, size = 24, className = "", fill = "none" }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-                {path}
-            </svg>
+        // --- ICONS ---
+        const IconMapPin = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        );
+        const IconUtensils = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
+        );
+        const IconWine = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M8 22h8"/><path d="M7 10h10"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z"/></svg>
+        );
+        const IconNavigation = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+        );
+        const IconHeart = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+        );
+        const IconStar = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        );
+        const IconInfo = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
         );
 
-        const Icons = {
-            Zap: (p) => <Icon {...p} path={<><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></>} />,
-            Play: (p) => <Icon {...p} path={<><polygon points="5 3 19 12 5 21 5 3" /></>} />,
-            X: (p) => <Icon {...p} path={<><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>} />,
-            CheckCircle: (p) => <Icon {...p} path={<><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></>} />,
-            Wind: (p) => <Icon {...p} path={<><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2" /><path d="M9.6 4.6A2 2 0 1 1 11 8H2" /><path d="M12.6 19.4A2 2 0 1 0 14 16H2" /></>} />,
-            Grid: (p) => <Icon {...p} path={<><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></>} />,
-            MousePointer2: (p) => <Icon {...p} path={<><path d="m12 19 7-7 3 3-7 7-3-3z" /><path d="m8 13-1.717.859a1 1 0 0 0-.458 1.118l1.372 5.488a1 1 0 0 0 1.57.483l2.844-2.133" /><path d="m12 12-4.586 4.586" /></>} />, // Approximation
-            Box: (p) => <Icon {...p} path={<><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></>} />,
-            Map: (p) => <Icon {...p} path={<><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" /><line x1="8" y1="2" x2="8" y2="18" /><line x1="16" y1="6" x2="16" y2="22" /></>} />,
-            Car: (p) => <Icon {...p} path={<><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" /><circle cx="7" cy="17" r="2" /><circle cx="17" cy="17" r="2" /></>} />,
-            Music: (p) => <Icon {...p} path={<><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></>} />,
-            Brain: (p) => <Icon {...p} path={<><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-4z" /><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-4z" /></>} />,
-            Sparkles: (p) => <Icon {...p} path={<><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3z" /></>} />,
-            TreePine: (p) => <Icon {...p} path={<><path d="m8 14 4-4 4 4" /><path d="m10 20 2-2 2 2" /><path d="m12 22v-8" /><path d="M6 18h12l-2-6h2l-5-10-5 10h2l-2 6Z" /></>} />,
-            Github: (p) => <Icon {...p} path={<><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" /></>} />,
+        // --- DATA ---
+        const AIRBNB = {
+            name: "Bach HQ (The Airbnb)",
+            address: "1721 Robert C. Blakes Sr. Dr, New Orleans, LA 70130",
+            lat: 29.9412,
+            lng: -90.0785
         };
 
-        // --- AUDIO ENGINE ---
-        const playSound = (type, variant = 'normal') => {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            if (!AudioContext) return;
-            const ctx = new AudioContext();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            const now = ctx.currentTime;
+        const LOCATIONS = [
+            // --- FOOD ---
+            {
+                id: 2,
+                name: "GW Fins",
+                address: "808 Bienville St, New Orleans, LA 70112",
+                type: "food",
+                vibe: "Upscale Seafood",
+                neighborhood: "French Quarter",
+                notes: "Dry aged fish. Fancy. Reservations required.",
+                lat: 29.9545,
+                lng: -90.0690
+            },
+            {
+                id: 3,
+                name: "Pizza Domenica",
+                address: "4933 Magazine St, New Orleans, LA 70115",
+                type: "food",
+                vibe: "Chill / Gourmet Pizza",
+                neighborhood: "Uptown",
+                notes: "Great happy hour. Chill spot on Magazine St.",
+                lat: 29.9215,
+                lng: -90.1100
+            },
+            {
+                id: 4,
+                name: "Herbsaint",
+                address: "701 St Charles Ave, New Orleans, LA 70130",
+                type: "food",
+                vibe: "French / Southern / Fancy",
+                neighborhood: "CBD",
+                notes: "James Beard award winner. Classic balcony dining if lucky.",
+                lat: 29.9500,
+                lng: -90.0700
+            },
+            {
+                id: 5,
+                name: "Paladar 511",
+                address: "511 Marigny St, New Orleans, LA 70117",
+                type: "food",
+                vibe: "Trendy Italian",
+                neighborhood: "Marigny",
+                notes: "Super cute loft vibe. Great pasta and pizza.",
+                lat: 29.9630,
+                lng: -90.0580
+            },
+            {
+                id: 6,
+                name: "Costera",
+                address: "4938 Prytania St, New Orleans, LA 70115",
+                type: "food",
+                vibe: "Spanish Tapas",
+                neighborhood: "Uptown",
+                notes: "Shareable plates, great happy hour sangria.",
+                lat: 29.9250,
+                lng: -90.1110
+            },
+            {
+                id: 7,
+                name: "Commander's Palace",
+                address: "1403 Washington Ave, New Orleans, LA 70130",
+                type: "food",
+                vibe: "The Classic / Jazz Brunch",
+                neighborhood: "Garden District",
+                notes: "$.25 Martinis at lunch (limit 3). Dress code enforced!",
+                lat: 29.9288,
+                lng: -90.0842
+            },
+            {
+                id: 8,
+                name: "Galatoire's",
+                address: "209 Bourbon St, New Orleans, LA 70130",
+                type: "food",
+                vibe: "Rowdy Fine Dining",
+                neighborhood: "French Quarter",
+                notes: "Get a seat downstairs for the real party. Friday lunch is legendary.",
+                lat: 29.9549,
+                lng: -90.0690
+            },
+            {
+                id: 9,
+                name: "Cochon",
+                address: "930 Tchoupitoulas St, New Orleans, LA 70130",
+                type: "food",
+                vibe: "Cajun / Rustic",
+                neighborhood: "Warehouse Dist.",
+                notes: "Meat-heavy, incredible wood-fired oysters.",
+                lat: 29.9422,
+                lng: -90.0672
+            },
+            {
+                id: 20,
+                name: "Pêche Seafood Grill",
+                address: "800 Magazine St, New Orleans, LA 70130",
+                type: "food",
+                vibe: "Rustic Seafood",
+                neighborhood: "Warehouse Dist.",
+                notes: "Incredible whole fish. James Beard winner. Lively.",
+                lat: 29.9450,
+                lng: -90.0690
+            },
+            {
+                id: 21,
+                name: "Coquette",
+                address: "2800 Magazine St, New Orleans, LA 70115",
+                type: "food",
+                vibe: "Modern Southern",
+                neighborhood: "Garden District",
+                notes: "Farm-to-table. Beautiful corner building. Great wine list.",
+                lat: 29.9270,
+                lng: -90.0860
+            },
+            {
+                id: 22,
+                name: "Lilette",
+                address: "3637 Magazine St, New Orleans, LA 70115",
+                type: "food",
+                vibe: "Classic French",
+                neighborhood: "Uptown",
+                notes: "Intimate, romantic, small plates.",
+                lat: 29.9240,
+                lng: -90.0960
+            },
+            {
+                id: 23,
+                name: "Clancy's",
+                address: "6100 Annunciation St, New Orleans, LA 70118",
+                type: "food",
+                vibe: "Old School Creole",
+                neighborhood: "Uptown",
+                notes: "Local favorite. White tablecloths but loud and fun.",
+                lat: 29.9220,
+                lng: -90.1230
+            },
+            {
+                id: 24,
+                name: "Parkway Bakery & Tavern",
+                address: "538 Hagan Ave, New Orleans, LA 70119",
+                type: "food",
+                vibe: "Po-Boys / Casual",
+                neighborhood: "Mid-City",
+                notes: "Legendary roast beef po-boys. Order at counter.",
+                lat: 29.9740,
+                lng: -90.0930
+            },
+            {
+                id: 25,
+                name: "Guy's Po-Boys",
+                address: "5259 Magazine St, New Orleans, LA 70115",
+                type: "food",
+                vibe: "Po-Boy Shop",
+                neighborhood: "Uptown",
+                notes: "Classic neighborhood spot. Great fried shrimp.",
+                lat: 29.9200,
+                lng: -90.1160
+            },
+            {
+                id: 34,
+                name: "Afrodisiac",
+                address: "5363 Franklin Ave, New Orleans, LA 70122",
+                type: "food",
+                vibe: "Creole Fusion / Music",
+                neighborhood: "Gentilly",
+                notes: "Vibrant spot for food and culture.",
+                lat: 30.0150,
+                lng: -90.0640
+            },
 
-            if (type === 'pop') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(400, now);
-                osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
-                gain.gain.setValueAtTime(0.1, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                osc.start(now); osc.stop(now + 0.1);
-            } else if (type === 'hit') {
-                if (variant === 'Drift') { osc.type = 'sine'; osc.frequency.setValueAtTime(300, now); }
-                else if (variant === 'Rush') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); }
-                else { osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); }
-                gain.gain.setValueAtTime(0.1, now);
-                gain.gain.linearRampToValueAtTime(0, now + 0.1);
-                osc.start(now); osc.stop(now + 0.3);
-            } else if (type === 'step') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(150, now);
-                gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-                osc.start(now); osc.stop(now + 0.1);
-            } else if (type === 'boost') {
-                osc.type = 'square'; osc.frequency.setValueAtTime(200, now); osc.frequency.linearRampToValueAtTime(600, now + 0.3);
-                gain.gain.setValueAtTime(0.05, now); gain.gain.linearRampToValueAtTime(0, now + 0.3);
-                osc.start(now); osc.stop(now + 0.3);
-            } else if (type === 'crash') {
-                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now); osc.frequency.exponentialRampToValueAtTime(10, now + 0.3);
-                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                osc.start(now); osc.stop(now + 0.3);
+            // --- DRINKS / NIGHTLIFE ---
+            {
+                id: 1,
+                name: "Bacchanal Fine Wine",
+                address: "600 Poland Avenue, New Orleans, LA, 70117",
+                type: "drinks",
+                vibe: "Wine Garden / Live Jazz",
+                neighborhood: "Bywater",
+                notes: "Think 'Lagniappe in Miami'. Huge courtyard, buy a bottle & cheese, listen to jazz.",
+                lat: 29.9600,
+                lng: -90.0300
+            },
+            {
+                id: 10,
+                name: "Wrong Iron",
+                address: "3532 Toulouse St, New Orleans, LA 70119",
+                type: "drinks",
+                vibe: "Beer Garden / Outdoor",
+                neighborhood: "Mid-City",
+                notes: "On the Greenway. Chill, watch football, lots of locals.",
+                lat: 29.9720,
+                lng: -90.0900
+            },
+            {
+                id: 11,
+                name: "The Delachaise",
+                address: "3442 St Charles Ave, New Orleans, LA 70115",
+                type: "drinks",
+                vibe: "Wine Bar / Date Night",
+                neighborhood: "Uptown",
+                notes: "Get the goose fat fries. Right on the streetcar line.",
+                lat: 29.9280,
+                lng: -90.0950
+            },
+            {
+                id: 12,
+                name: "Oak & Ale",
+                address: "8118 Oak St, New Orleans, LA 70118",
+                type: "drinks",
+                vibe: "Wine / Snacks",
+                neighborhood: "Carrollton",
+                notes: "Cute patio, chill happy hour.",
+                lat: 29.9480,
+                lng: -90.1300
+            },
+            {
+                id: 13,
+                name: "Peacock Room",
+                address: "501 Tchoupitoulas St, New Orleans, LA 70130",
+                type: "drinks",
+                vibe: "Swanky Hotel Bar",
+                neighborhood: "CBD",
+                notes: "Inside Hotel Fontenot. Very instagrammable decor.",
+                lat: 29.9485,
+                lng: -90.0672
+            },
+            {
+                id: 14,
+                name: "The Will & The Way",
+                address: "719 Toulouse St, New Orleans, LA 70130",
+                type: "drinks",
+                vibe: "Craft Cocktails / Courtyard",
+                neighborhood: "French Quarter",
+                notes: "Hidden gem. Quiet courtyard compared to Bourbon St.",
+                lat: 29.9570,
+                lng: -90.0670
+            },
+            {
+                id: 15,
+                name: "Lucy's Retired Surfers",
+                address: "701 Tchoupitoulas St, New Orleans, LA 70130",
+                type: "drinks",
+                vibe: "Party / Dancing",
+                neighborhood: "Warehouse Dist.",
+                notes: "Late night spot. Dance on tables. Locals love it.",
+                lat: 29.9460,
+                lng: -90.0660
+            },
+            {
+                id: 16,
+                name: "Pat O'Brien's",
+                address: "718 St Peter, New Orleans, LA 70116",
+                type: "drinks",
+                vibe: "Tourist Classic / Piano Bar",
+                neighborhood: "French Quarter",
+                notes: "Home of the Hurricane. Dueling pianos inside.",
+                lat: 29.9581,
+                lng: -90.0655
+            },
+            {
+                id: 17,
+                name: "Cat's Meow",
+                address: "701 Bourbon St, New Orleans, LA 70116",
+                type: "drinks",
+                vibe: "Karaoke / Loud",
+                neighborhood: "French Quarter",
+                notes: "If you want to sing or watch drunk people sing.",
+                lat: 29.9580,
+                lng: -90.0660
+            },
+            {
+                id: 18,
+                name: "Lafitte's Blacksmith Shop",
+                address: "941 Bourbon St, New Orleans, LA 70116",
+                type: "drinks",
+                vibe: "Historic / Divey",
+                neighborhood: "French Quarter",
+                notes: "Oldest bar in US. Lit by candles. Get the purple drink (Voodoo).",
+                lat: 29.9607,
+                lng: -90.0640
+            },
+            {
+                id: 19,
+                name: "F&M Patio Bar & Grits",
+                address: "4841 Tchoupitoulas St, New Orleans, LA 70115",
+                type: "drinks",
+                vibe: "Late Night / Dive",
+                neighborhood: "Uptown",
+                notes: "Combine them! Cheese fries at F&Ms, dive vibes next door.",
+                lat: 29.9190,
+                lng: -90.1050
+            },
+            {
+                id: 26,
+                name: "The Elysian Bar",
+                address: "2317 Burgundy St, New Orleans, LA 70117",
+                type: "drinks",
+                vibe: "Aesthetic / Garden",
+                neighborhood: "Marigny",
+                notes: "Inside Hotel Peter and Paul. Stunning decor, great for photos.",
+                lat: 29.9670,
+                lng: -90.0550
+            },
+            {
+                id: 27,
+                name: "Carousel Bar",
+                address: "214 Royal St, New Orleans, LA 70130",
+                type: "drinks",
+                vibe: "Upscale / Iconic",
+                neighborhood: "French Quarter",
+                notes: "Inside Hotel Monteleone. The bar actually spins.",
+                lat: 29.9550,
+                lng: -90.0680
+            },
+            {
+                id: 28,
+                name: "The Chloe",
+                address: "4125 St Charles Ave, New Orleans, LA 70115",
+                type: "drinks",
+                vibe: "Poolside / Chic",
+                neighborhood: "Uptown",
+                notes: "Boutique hotel. Great porch and pool bar.",
+                lat: 29.9280,
+                lng: -90.1020
+            },
+            {
+                id: 29,
+                name: "Cure",
+                address: "4905 Freret St, New Orleans, LA 70115",
+                type: "drinks",
+                vibe: "High-End Cocktails",
+                neighborhood: "Freret",
+                notes: "James Beard winner. The place for a serious drink.",
+                lat: 29.9360,
+                lng: -90.1080
+            },
+            {
+                id: 30,
+                name: "Hot Tin",
+                address: "2031 St Charles Ave, New Orleans, LA 70130",
+                type: "drinks",
+                vibe: "Rooftop / Views",
+                neighborhood: "Garden District",
+                notes: "Rooftop of Pontchartrain Hotel. Best skyline view.",
+                lat: 29.9370,
+                lng: -90.0780
+            },
+            {
+                id: 31,
+                name: "The Gold Mine",
+                address: "701 Dauphine St, New Orleans, LA 70112",
+                type: "drinks",
+                vibe: "Dancing / Flaming Drinks",
+                neighborhood: "French Quarter",
+                notes: "Order the Flaming Dr. Pepper. Late night dancing.",
+                lat: 29.9570,
+                lng: -90.0690
+            },
+            {
+                id: 32,
+                name: "Snake and Jake's",
+                address: "7612 Oak St, New Orleans, LA 70118",
+                type: "drinks",
+                vibe: "Ultimate Dive",
+                neighborhood: "Uptown",
+                notes: "Christmas lights year round. Late late night spot.",
+                lat: 29.9470,
+                lng: -90.1280
             }
-        };
+        ];
+
+        // --- UTILS ---
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 3958.8; // Earth radius in miles
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
 
         // --- COMPONENTS ---
-        const Button = ({ onClick, children, className = "", variant = "primary", disabled = false, icon: Icon }) => {
-            const baseStyle = "relative flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-sm uppercase tracking-wide transition-all duration-100 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100";
-            const variants = {
-                primary: "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 hover:-translate-y-0.5",
-                secondary: "bg-white text-slate-700 border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50",
-                accent: "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-600",
-            };
-            return <button onClick={onClick} disabled={disabled} className={`${baseStyle} ${variants[variant]} ${className}`}>{Icon && <Icon size={18} className={children ? "mr-1" : ""} />}{children}</button>;
-        };
+        const Badge = ({ children, colorClass }) => (
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colorClass}`}>
+                {children}
+            </span>
+        );
 
-        // --- SUB GAMES ---
+        const FilterButton = ({ active, onClick, icon: Icon, label }) => (
+            <button
+                onClick={onClick}
+                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all duration-200 flex-1 sm:flex-none ${
+                active 
+                    ? 'bg-rose-500 text-white shadow-lg shadow-rose-200 transform scale-105' 
+                    : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+                }`}
+            >
+                <Icon size={18} />
+                {label}
+            </button>
+        );
 
-        // 1. Bubble Pop
-        const BubbleWrap = () => {
-            const [bubbles, setBubbles] = useState(Array(30).fill(false));
-            const popBubble = (index) => {
-                if (!bubbles[index]) {
-                playSound('pop');
-                const newBubbles = [...bubbles]; newBubbles[index] = true; setBubbles(newBubbles);
-                }
-            };
-            useEffect(() => {
-                if (bubbles.every(b => b)) setTimeout(() => setBubbles(Array(30).fill(false)), 800);
-            }, [bubbles]);
-            return (
-                <div className="flex flex-col items-center justify-center h-full animate-in fade-in duration-500">
-                    <div className="bg-slate-800 p-6 rounded-3xl shadow-2xl border-4 border-slate-700">
-                        <div className="grid grid-cols-5 gap-3">
-                            {bubbles.map((popped, i) => (
-                            <button key={i} onPointerDown={() => popBubble(i)} className={`w-12 h-12 rounded-full transition-all duration-200 relative ${popped ? 'bg-slate-700 scale-75 shadow-inner' : 'bg-gradient-to-tr from-cyan-400 to-blue-500 hover:scale-110 active:scale-90 shadow-lg shadow-cyan-500/30'}`}>
-                                {!popped && <div className="absolute top-2 left-3 w-3 h-1.5 bg-white/50 rounded-full" />}
-                            </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        // 2. Zen Sort
-        const ZenSort = () => {
-            const generateNumbers = () => Array.from({ length: 5 }, () => Math.floor(Math.random() * 99) + 1);
-            const [numbers, setNumbers] = useState(generateNumbers());
-            const [feedback, setFeedback] = useState(null);
-            const moveNumber = (dragIndex, hoverIndex) => {
-                const newNumbers = [...numbers]; const item = newNumbers.splice(dragIndex, 1)[0]; newNumbers.splice(hoverIndex, 0, item); setNumbers(newNumbers);
-                playSound('pop');
-                if (newNumbers.every((val, i, arr) => !i || (arr[i-1] <= val))) {
-                    setFeedback("SORTED!"); setTimeout(() => { setFeedback(null); setNumbers(generateNumbers()); }, 1000);
-                }
-            };
-            return (
-                <div className="flex flex-col items-center justify-center h-full max-w-lg mx-auto">
-                    <div className="flex gap-2 mb-8 bg-slate-100 p-2 rounded-xl">
-                        {numbers.map((num, idx) => (
-                        <div key={`${num}-${idx}`} className="relative group">
-                            <button onClick={() => idx > 0 && moveNumber(idx, idx - 1)} className="w-14 h-24 bg-white border-b-4 border-slate-200 text-slate-700 font-black text-2xl rounded-lg active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center hover:bg-slate-50">{num}</button>
-                        </div>
-                        ))}
-                    </div>
-                    <div className="h-8">{feedback && <span className="text-emerald-600 font-bold animate-bounce block">{feedback}</span>}</div>
-                </div>
-            );
-        };
-
-        // 3. The Long Walk
-        const TheLongWalk = ({ taskName, user, saveStats }) => {
-            const [walking, setWalking] = useState(false);
-            const [distance, setDistance] = useState(0);
-            const [event, setEvent] = useState(null);
-            const [trees, setTrees] = useState([{ id: 1, x: 100 }, { id: 2, x: 300 }]);
-            const reqRef = useRef();
-            
-            const generateAIEvent = async () => {
-                const prompt = `Generate a single, very short fantasy RPG event (under 20 words) for a player taking a break from: "${taskName}". Provide 2 short choices (1-3 words). Format ONLY as JSON: { "title": "String", "desc": "String", "choices": [{"label": "String", "outcome": "String"}, {"label": "String", "outcome": "String"}] }`;
-                const jsonStr = await generateContent(prompt);
-                if (jsonStr) {
-                    try {
-                        const evt = JSON.parse(jsonStr.replace(/```json|```/g, '').trim());
-                        setEvent(evt); setWalking(false);
-                    } catch (e) { console.log("AI Parse Error", e); }
-                } else {
-                    // Fallback
-                    setEvent({ title: "Crossroads", desc: "The path splits.", choices: [{label:"Left", outcome:"Safe"}, {label:"Right", outcome:"Bumpy"}] });
-                    setWalking(false);
-                }
-            };
-
-            const update = () => {
-                setDistance(d => d + 0.1);
-                setTrees(prev => {
-                    let next = prev.map(t => ({ ...t, x: t.x - 3 }));
-                    if (next[0].x < -50) { next.shift(); next.push({ id: Date.now(), x: 450 + Math.random() * 100 }); }
-                    return next;
-                });
-                if (Math.random() > 0.998 && !event) generateAIEvent();
-                else reqRef.current = requestAnimationFrame(update);
-            };
-
-            useEffect(() => { if (walking) reqRef.current = requestAnimationFrame(update); return () => cancelAnimationFrame(reqRef.current); }, [walking, event]);
-            const handleChoice = () => { playSound('pop'); setEvent(null); if (user && saveStats) saveStats({ distance: Math.floor(distance) }); };
+        const LocationCard = ({ location, distance }) => {
+            const isWalkingDistance = distance < 0.8;
+            const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.name + " " + location.address)}`;
 
             return (
-                <div className="flex flex-col h-full w-full relative overflow-hidden bg-sky-100 rounded-3xl border-4 border-slate-200">
-                    <div className="absolute inset-0 z-0 bg-sky-100" />
-                    <div className="absolute bottom-0 w-full h-16 bg-emerald-600 z-10 border-t-4 border-emerald-700" />
-                    <div className="absolute inset-0 z-10 pointer-events-none">
-                        {trees.map(t => <div key={t.id} className="absolute bottom-14 left-0 transition-transform text-emerald-800" style={{ transform: `translateX(${t.x}px)` }}><Icons.TreePine size={64} fill="currentColor" /></div>)}
-                    </div>
-                    <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20">
-                        <div className={`w-8 h-8 bg-indigo-500 rounded-full border-2 border-white shadow-md ${walking ? 'animate-bounce' : ''}`} />
-                    </div>
-                    <div className="absolute top-4 left-4 z-30 bg-white/80 backdrop-blur px-3 py-1 rounded-full text-xs font-bold font-mono text-slate-600 border border-white">DIST: {Math.floor(distance)}m</div>
-                    <div className="absolute bottom-4 w-full flex justify-center z-30 px-4">
-                        {event ? (
-                            <div className="bg-white p-4 rounded-xl shadow-xl w-full max-w-xs border-2 border-indigo-100 animate-in slide-in-from-bottom-5">
-                                <h3 className="font-bold text-slate-800 mb-1 flex items-center gap-2"><Icons.Sparkles size={16} className="text-indigo-500"/> {event.title}</h3>
-                                <p className="text-sm text-slate-600 mb-4">{event.desc}</p>
-                                <div className="flex gap-2">{event.choices.map((c, i) => <button key={i} onClick={handleChoice} className="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold py-2 rounded-lg border border-indigo-200">{c.label}</button>)}</div>
+                <div className="group bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-xl hover:border-rose-100 transition-all duration-300">
+                    <div className="flex justify-between items-start mb-3">
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-800 group-hover:text-rose-600 transition-colors">
+                                {location.name}
+                            </h3>
+                            <div className="flex items-center gap-2 text-sm text-slate-500 mt-1">
+                                <IconMapPin size={14} className="text-rose-400" />
+                                <span>{location.neighborhood}</span>
                             </div>
+                        </div>
+                        <div className={`flex flex-col items-end`}>
+                            <span className="text-lg font-bold text-slate-800">{distance}</span>
+                            <span className="text-xs text-slate-400 uppercase font-medium">miles</span>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        {location.type === 'food' ? (
+                            <Badge colorClass="bg-orange-100 text-orange-700">Food</Badge>
                         ) : (
-                            <button onClick={() => setWalking(!walking)} className={`px-8 py-3 rounded-full font-bold text-white shadow-lg transition-all ${walking ? 'bg-rose-500 hover:bg-rose-600' : 'bg-emerald-500 hover:bg-emerald-600 animate-pulse'}`}>{walking ? 'STOP' : 'WALK'}</button>
+                            <Badge colorClass="bg-purple-100 text-purple-700">Drinks</Badge>
                         )}
+                        
+                        {isWalkingDistance && (
+                            <Badge colorClass="bg-emerald-100 text-emerald-700">Walking Dist</Badge>
+                        )}
+                        
+                        <Badge colorClass="bg-slate-100 text-slate-600">{location.vibe}</Badge>
                     </div>
+
+                    <div className="bg-slate-50 rounded-lg p-3 mb-4">
+                        <p className="text-sm text-slate-600 italic">"{location.notes}"</p>
+                    </div>
+
+                    <a 
+                        href={mapUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-2.5 rounded-lg font-medium hover:bg-rose-500 transition-colors"
+                    >
+                        <IconNavigation size={16} />
+                        Map It
+                    </a>
                 </div>
             );
         };
 
-        // 4. Rhythm Flow (Fixed)
-        const RhythmFlow = () => {
-            const canvasRef = useRef(null);
-            const [isPlaying, setIsPlaying] = useState(false);
-            const [score, setScore] = useState(0);
-            const [combo, setCombo] = useState(0);
+        const App = () => {
+            const [filter, setFilter] = useState('all'); // all, food, drinks
             
-            // Refs for loop
-            const stateRef = useRef({ notes: [], lanes: [0,0,0], lastSpawn: 0, animId: null, currentSong: null });
-            const songs = [{ id: 'Drift', bpm: 2, color: '#60A5FA', bg: '#1e293b' }, { id: 'Pulse', bpm: 4, color: '#A78BFA', bg: '#2e1065' }, { id: 'Rush', bpm: 6, color: '#F472B6', bg: '#831843' }];
-
-            const loop = () => {
-                const ctx = canvasRef.current?.getContext('2d');
-                if (!ctx) return;
-                const state = stateRef.current;
-                const song = state.currentSong;
-                if (!song) return;
-                
-                state.lastSpawn++;
-                if (state.lastSpawn > Math.max(20, 60 - (song.bpm * 5))) { 
-                    state.notes.push({ lane: Math.floor(Math.random()*3), y: -20, id: Date.now() }); state.lastSpawn = 0;
-                }
-
-                ctx.fillStyle = song.bg; ctx.fillRect(0, 0, 300, 400);
-                ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 2;
-                [1, 2].forEach(i => { ctx.beginPath(); ctx.moveTo(i*100, 0); ctx.lineTo(i*100, 400); ctx.stroke(); });
-                ctx.beginPath(); ctx.moveTo(0, 350); ctx.lineTo(300, 350); ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 4; ctx.stroke();
-
-                ctx.fillStyle = song.color;
-                for(let i = state.notes.length - 1; i >= 0; i--) {
-                    const n = state.notes[i]; n.y += song.bpm + 2; 
-                    ctx.beginPath(); ctx.arc(n.lane * 100 + 50, n.y, 25, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-                    if (n.y > 420) { state.notes.splice(i, 1); setCombo(0); }
-                }
-                
-                state.lanes.forEach((val, i) => { if(val > 0) { ctx.fillStyle = song.color; ctx.globalAlpha=val/8; ctx.fillRect(i*100, 0, 100, 400); ctx.globalAlpha=1; state.lanes[i]--; }});
-                stateRef.current.animId = requestAnimationFrame(loop);
-            };
-
-            const hit = (lane) => {
-                const state = stateRef.current;
-                if (!state.currentSong) return;
-                state.lanes[lane] = 8;
-                const hitIndex = state.notes.findIndex(n => n.lane === lane && Math.abs(n.y - 350) < 50);
-                if (hitIndex !== -1) {
-                    state.notes.splice(hitIndex, 1); setScore(s => s + 100); setCombo(c => c + 1); playSound('hit', state.currentSong.id);
-                } else setCombo(0);
-            };
-
-            const initGame = (song) => { stateRef.current.currentSong = song; stateRef.current.notes = []; setIsPlaying(true); setScore(0); setCombo(0); loop(); };
-
-            useEffect(() => {
-                const k = (e) => { 
-                    if (stateRef.current.currentSong) { 
-                        if(e.key==='ArrowLeft') hit(0); if(e.key==='ArrowDown') hit(1); if(e.key==='ArrowRight') hit(2); 
-                    }
-                };
-                window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k);
+            // Enhance locations with distance and sort
+            const processedLocations = useMemo(() => {
+                return LOCATIONS.map(loc => ({
+                ...loc,
+                distance: calculateDistance(AIRBNB.lat, AIRBNB.lng, loc.lat, loc.lng).toFixed(1)
+                })).sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
             }, []);
 
-            return (
-                <div className="flex flex-col items-center h-full w-full justify-center relative bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border-4 border-slate-700">
-                    {!isPlaying ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-10 p-6 text-center gap-3">
-                            <h3 className="text-xl font-bold text-white mb-4"><Icons.Music className="inline mb-1"/> SELECT TRACK</h3>
-                            {songs.map(song => (
-                                <button key={song.id} onClick={() => initGame(song)} className="w-full py-4 rounded-xl font-bold text-white flex justify-between px-6" style={{ backgroundColor: song.bg, border: `2px solid ${song.color}` }}>
-                                    {song.id}
-                                </button>
-                            ))}
-                        </div>
-                    ) : (
-                        <>
-                            <div className="absolute top-4 w-full px-6 flex justify-between font-mono font-bold text-white z-10 pointer-events-none"><span>{score}</span><span className={combo>5?"text-emerald-400":""}>x{combo}</span></div>
-                            <canvas ref={canvasRef} width={300} height={400} className="w-full h-full object-cover" />
-                            <div className="absolute bottom-0 w-full h-32 grid grid-cols-3 z-20"> {[0,1,2].map(i => <div key={i} onPointerDown={() => hit(i)} className="active:bg-white/5" />)} </div>
-                            <button onClick={() => { setIsPlaying(false); stateRef.current.currentSong = null; cancelAnimationFrame(stateRef.current.animId); }} className="absolute top-4 right-4 bg-white/10 p-2 rounded-full text-white z-20"><Icons.X size={16}/></button>
-                        </>
-                    )}
-                </div>
-            );
-        };
+            const filteredLocations = useMemo(() => {
+                if (filter === 'all') return processedLocations;
+                return processedLocations.filter(loc => loc.type === filter);
+            }, [filter, processedLocations]);
 
-        // 5. Zen Sudoku
-        const ZenSudoku = () => {
-            const solvedGrid = [[5,3,4,6,7,8,9,1,2],[6,7,2,1,9,5,3,4,8],[1,9,8,3,4,2,5,6,7],[8,5,9,7,6,1,4,2,3],[4,2,6,8,5,3,7,9,1],[7,1,3,9,2,4,8,5,6],[9,6,1,5,3,7,2,8,4],[2,8,7,4,1,9,6,3,5],[3,4,5,2,8,6,1,7,9]];
-            const [grid, setGrid] = useState(solvedGrid.map(r => r.map(c => Math.random() > 0.6 ? 0 : c)));
-            const [selected, setSelected] = useState(null);
-            const [hint, setHint] = useState(null);
-
-            const getAIHint = async () => {
-                setHint("Thinking...");
-                const prompt = `Act as Sudoku tutor. Grid (0 empty): [${grid.flat().join(',')}]. Hint for ONE cell. Brief.`;
-                const text = await generateContent(prompt);
-                setHint(text || "Check center rows.");
-            };
-            const handleNum = (num) => {
-                if (!selected) return;
-                if (num === solvedGrid[selected.r][selected.c]) { const n = [...grid]; n[selected.r][selected.c] = num; setGrid(n); playSound('pop'); } 
-                else playSound('hit');
-            };
-
-            return (
-                <div className="flex flex-col items-center h-full w-full justify-center bg-white rounded-3xl overflow-hidden shadow-xl border border-slate-200">
-                    <div className="mb-2 flex justify-between w-full px-6 items-center">
-                        <h3 className="font-bold text-slate-700">SUDOKU</h3>
-                        <button onClick={getAIHint} className="flex items-center gap-1 text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-200"><Icons.Brain size={12}/> AI Hint</button>
-                    </div>
-                    {hint && <div className="px-6 mb-2 text-xs text-slate-500 italic bg-slate-50 p-2 w-full text-center border-y border-slate-100">{hint}</div>}
-                    <div className="bg-slate-800 p-2 rounded-lg shadow-lg">
-                        <div className="grid grid-cols-9 gap-px bg-slate-700 border-2 border-slate-700">
-                            {grid.map((row, r) => row.map((cell, c) => (
-                                <button key={`${r}-${c}`} onClick={() => setSelected({r, c})} className={`w-8 h-8 flex items-center justify-center text-sm font-bold ${selected?.r===r&&selected?.c===c ? 'bg-indigo-500 text-white' : 'bg-slate-800 text-slate-100'}`}>
-                                    {cell !== 0 ? cell : ''}
-                                </button>
-                            )))}
-                        </div>
-                    </div>
-                    <div className="mt-4 grid grid-cols-9 gap-1 px-4">{[1,2,3,4,5,6,7,8,9].map(n => <button key={n} onClick={() => handleNum(n)} className="w-8 h-10 bg-slate-100 hover:bg-indigo-100 rounded text-indigo-900 font-bold">{n}</button>)}</div>
-                </div>
-            );
-        };
-
-        // 6. Turbo Drift (Fixed)
-        const TurboDrift = ({ userHighScore }) => {
-            const canvasRef = useRef(null);
-            const [isPlaying, setIsPlaying] = useState(false);
-            const [score, setScore] = useState(0);
-            const stateRef = useRef({ playerX: 0, road: [], objects: [], dist: 0, speed: 0, animId: null });
-
-            const loop = () => {
-                const ctx = canvasRef.current?.getContext('2d');
-                if (!ctx) return;
-                const state = stateRef.current;
-                const width = 300; const height = 400;
-
-                if (state.dist < 2000) state.speed = Math.min(state.speed + 0.1, 15);
-                state.dist += state.speed;
-
-                if(Math.random() > 0.95) state.objects.push({ z: 1000, x: Math.random()*1.6 - 0.8, type: Math.random()>0.7?'boost':'barrier'});
-                
-                for(let i=state.objects.length-1; i>=0; i--) {
-                    state.objects[i].z -= state.speed * 2;
-                    if(state.objects[i].z < 0) {
-                        if(Math.abs(state.objects[i].x - state.playerX) < 0.4) {
-                            if(state.objects[i].type === 'boost') { setScore(s=>s+50); playSound('boost'); }
-                            else { state.speed = Math.max(2, state.speed-5); setScore(s=>Math.max(0, s-10)); playSound('crash'); }
-                        }
-                        state.objects.splice(i, 1);
-                    }
-                }
-
-                ctx.fillStyle = '#0f172a'; ctx.fillRect(0,0,width,height); 
-                ctx.fillStyle = '#1e293b'; ctx.fillRect(0,150,width,height-150); 
-                
-                for(let i=0; i<20; i++) {
-                    const z = 20-i; const y = 150 + (i * 250 / 20); const nextY = 150 + ((i+1) * 250 / 20);
-                    const w = 240 * (i/20); const nextW = 240 * ((i+1)/20);
-                    const curve = Math.sin((state.dist + i*20)*0.05) * (i*i*0.5);
-                    ctx.fillStyle = (Math.floor(state.dist/20)+i)%2===0 ? '#334155' : '#475569';
-                    ctx.beginPath();
-                    ctx.moveTo(150-w+curve-(state.playerX*i*2), y); ctx.lineTo(150+w+curve-(state.playerX*i*2), y);
-                    ctx.lineTo(150+nextW+curve-(state.playerX*(i+1)*2), nextY); ctx.lineTo(150-nextW+curve-(state.playerX*(i+1)*2), nextY);
-                    ctx.fill();
-                }
-
-                ctx.fillStyle = '#6366f1'; ctx.fillRect(130, 350, 40, 20);
-                stateRef.current.animId = requestAnimationFrame(loop);
-            };
-
-            return (
-                <div className="flex flex-col items-center h-full w-full justify-center relative bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border-4 border-slate-700">
-                    {!isPlaying ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 z-20 p-6 text-center">
-                            <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-rose-500 mb-2">TURBO DRIFT</h3>
-                            {userHighScore > 0 && <p className="text-xs text-emerald-400 mb-4">GHOST RIVAL: {userHighScore} PTS</p>}
-                            <button onClick={() => { setIsPlaying(true); stateRef.current.objects=[]; stateRef.current.speed=0; loop(); }} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-10 rounded-full shadow-lg">DRIVE</button>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="absolute top-4 left-4 font-mono font-bold text-white z-10 text-xl">{score} PTS</div>
-                            <canvas ref={canvasRef} width={300} height={400} className="w-full h-full object-cover" />
-                            <div className="absolute bottom-0 w-full h-40 flex z-20">
-                                <div className="flex-1 active:bg-white/5" onPointerDown={() => stateRef.current.playerX = Math.max(stateRef.current.playerX - 0.3, -1)}/>
-                                <div className="flex-1 active:bg-white/5" onPointerDown={() => stateRef.current.playerX = Math.min(stateRef.current.playerX + 0.3, 1)}/>
-                            </div>
-                            <button onClick={() => { setIsPlaying(false); cancelAnimationFrame(stateRef.current.animId); }} className="absolute top-4 right-4 bg-white/10 p-2 rounded-full text-white z-20"><Icons.X size={16}/></button>
-                        </>
-                    )}
-                </div>
-            );
-        };
-
-        // --- APP ROOT ---
-        const FocusAnchor = () => {
-            const [appState, setAppState] = useState('onboarding');
-            const [selectedTime, setSelectedTime] = useState(5);
-            const [taskName, setTaskName] = useState('');
-            const [timeLeft, setTimeLeft] = useState(0);
-            const [activeGame, setActiveGame] = useState('bubble');
-            const [user, setUser] = useState(null);
-            const [userStats, setUserStats] = useState({});
-            const [themeFlavor, setThemeFlavor] = useState(null);
-
-            // Auth
-            useEffect(() => {
-                const init = async () => { if (auth) await signInAnonymously(auth); };
-                init();
-                if (auth) return onAuthStateChanged(auth, setUser);
-            }, []);
-
-            // Stats Sync
-            useEffect(() => {
-                if (!user || !db) return;
-                const statsRef = doc(db, 'artifacts', appId, 'users', user.uid, 'stats', 'main');
-                const unsub = onSnapshot(statsRef, (s) => { if (s.exists()) setUserStats(s.data()); });
-                return () => unsub();
-            }, [user]);
-
-            const saveStats = async (newStats) => {
-                if (!user || !db) return;
-                const statsRef = doc(db, 'artifacts', appId, 'users', user.uid, 'stats', 'main');
-                await setDoc(statsRef, { ...userStats, ...newStats }, { merge: true });
-            };
-
-            // Login
-            const handleLogin = async (providerName) => {
-                if (!auth) return alert("Firebase auth not configured.");
+            const copyAddress = () => {
+                // Clipboard API might require secure context or user interaction in some browser configs
+                // We use the modern API but wrap in try/catch just in case
                 try {
-                    const provider = providerName === 'github' ? new GithubAuthProvider() : new GoogleAuthProvider();
-                    await signInWithPopup(auth, provider);
-                } catch (e) { console.error(e); }
+                    navigator.clipboard.writeText(AIRBNB.address).then(() => {
+                        alert("Address copied!");
+                    }).catch(err => {
+                        console.error('Failed to copy: ', err);
+                    });
+                } catch (e) {
+                    console.error('Clipboard API unavailable');
+                }
             };
-
-            // Timer
-            useEffect(() => {
-                let interval = null;
-                if (appState === 'active' && timeLeft > 0) interval = setInterval(() => setTimeLeft((t) => t - 1), 1000);
-                else if (timeLeft === 0 && appState === 'active') setAppState('summary');
-                return () => clearInterval(interval);
-            }, [appState, timeLeft]);
-
-            const startSession = async () => {
-                if (!taskName.trim()) return;
-                // Simple AI theme gen
-                const prompt = `Fantasy quest name for task: "${taskName}". JSON: { "flavor": "String" }`;
-                const jsonStr = await generateContent(prompt);
-                if (jsonStr) { try { setThemeFlavor(JSON.parse(jsonStr.replace(/```json|```/g, '')).flavor); } catch(e){} }
-                
-                setTimeLeft(selectedTime * 60);
-                setAppState('active');
-            };
-
-            if (appState === 'onboarding') {
-                return (
-                    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans text-slate-800">
-                        <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
-                            <div className="flex justify-between items-start mb-6">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white"><Icons.Zap size={20}/></div>
-                                    <h1 className="text-2xl font-bold text-slate-800">Focus Anchor</h1>
-                                </div>
-                                <button onClick={() => handleLogin('github')} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 text-slate-600" title="Login"><Icons.Github size={20}/></button>
-                            </div>
-                            <div className="space-y-6">
-                                <div><label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">My Task</label><input type="text" placeholder="What are you working on?" className="w-full text-lg font-medium text-slate-800 bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 rounded-xl px-4 py-3 outline-none" value={taskName} onChange={(e) => setTaskName(e.target.value)} /></div>
-                                <div><label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Break Time</label><div className="grid grid-cols-3 gap-3">{[2, 5, 10].map(time => (<button key={time} onClick={() => setSelectedTime(time)} className={`py-3 rounded-xl font-bold transition-all border-2 ${selectedTime === time ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-slate-400 border-slate-200'}`}>{time}m</button>))}</div></div>
-                                <Button onClick={startSession} className="w-full py-4 text-base shadow-indigo-500/30" disabled={!taskName}>Start Break</Button>
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
-
-            if (appState === 'summary') {
-                return (
-                    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 text-center">
-                        <div className="max-w-md w-full animate-in fade-in zoom-in duration-500">
-                            <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/40"><Icons.CheckCircle size={40} className="text-white" /></div>
-                            <h2 className="text-3xl font-bold text-white mb-2">Break Over</h2>
-                            <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 mb-8 mt-6"><span className="text-xl font-medium text-emerald-400">"{taskName}"</span></div>
-                            <Button variant="secondary" onClick={() => { setAppState('onboarding'); setTaskName(''); }} className="w-full">Back to Work</Button>
-                        </div>
-                    </div>
-                );
-            }
 
             return (
-                <div className="h-screen bg-slate-50 flex flex-col font-sans overflow-hidden">
-                    <div className="bg-white px-4 py-3 shadow-sm z-10 flex justify-between items-center border-b border-slate-100">
-                        <div className="flex flex-col"><span className="text-[10px] font-bold text-slate-400 uppercase">Anchored To:</span><span className="text-sm font-bold text-slate-700 truncate max-w-[200px]">{themeFlavor || taskName}</span></div>
-                        <div className={`text-2xl font-mono font-bold ${timeLeft < 30 ? 'text-rose-500 animate-pulse' : 'text-slate-800'}`}>{Math.floor(timeLeft / 60)}:{timeLeft % 60 < 10 ? '0' : ''}{timeLeft % 60}</div>
-                    </div>
-                    <div className="flex-1 p-4 flex items-center justify-center relative bg-slate-100">
-                        <div className="w-full max-w-md h-[500px] relative shadow-xl rounded-3xl bg-white overflow-hidden border border-slate-200">
-                            {activeGame === 'bubble' && <BubbleWrap />}
-                            {activeGame === 'sort' && <ZenSort />}
-                            {activeGame === 'rpg' && <TheLongWalk taskName={taskName} user={user} saveStats={saveStats} />}
-                            {activeGame === 'rhythm' && <RhythmFlow />}
-                            {activeGame === 'sudoku' && <ZenSudoku />}
-                            {activeGame === 'drive' && <TurboDrift userHighScore={userStats.driftHighScore || 0} />}
+                <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20">
+                    
+                    {/* Header / Hero */}
+                    <div className="bg-gradient-to-r from-rose-400 to-orange-400 text-white pb-16 pt-10 px-6 rounded-b-[2.5rem] shadow-xl relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                            {/* Abstract pattern circles */}
+                            <div className="absolute top-[-20%] left-[-10%] w-64 h-64 rounded-full bg-white mix-blend-overlay"></div>
+                            <div className="absolute bottom-[-20%] right-[-10%] w-80 h-80 rounded-full bg-white mix-blend-overlay"></div>
+                        </div>
+
+                        <div className="max-w-2xl mx-auto relative z-10 text-center">
+                            <div className="inline-block bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full text-xs font-bold tracking-wider mb-4 border border-white/30 uppercase">
+                                NOLA Bach Trip
+                            </div>
+                            <h1 className="text-4xl font-black mb-2 tracking-tight">Let's Get Weird</h1>
+                            <p className="text-rose-100 text-lg mb-8 font-medium">Eat, Drink, & Be Married</p>
+                            
+                            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20 text-left flex items-center justify-between gap-4">
+                                <div>
+                                    <div className="text-rose-100 text-xs uppercase tracking-wider font-bold mb-1">Home Base</div>
+                                    <div className="text-white font-semibold leading-tight pr-4">
+                                        1721 Robert C. Blakes Sr. Dr
+                                        <span className="block text-rose-100 text-sm font-normal mt-0.5 opacity-90">Central City / Garden Dist Border</span>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={copyAddress}
+                                    className="bg-white text-rose-500 p-2.5 rounded-xl hover:bg-rose-50 transition-colors shrink-0"
+                                    title="Copy Address"
+                                >
+                                    <IconNavigation size={20} />
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <div className="bg-white p-4 pb-8 border-t border-slate-200">
-                        <div className="flex justify-around max-w-md mx-auto overflow-x-auto gap-2">
-                            {[
-                                { id: 'bubble', icon: Icons.MousePointer2 }, { id: 'sort', icon: Icons.Grid },
-                                { id: 'rpg', icon: Icons.Map }, { id: 'drive', icon: Icons.Car },
-                                { id: 'rhythm', icon: Icons.Music }, { id: 'sudoku', icon: Icons.Brain },
-                            ].map((tool) => (
-                                <button key={tool.id} onClick={() => setActiveGame(tool.id)} className={`flex flex-col items-center justify-center w-14 h-14 rounded-2xl transition-all duration-200 shrink-0 ${activeGame === tool.id ? `bg-indigo-600 text-white shadow-lg -translate-y-2` : 'text-slate-400 hover:bg-slate-50'}`}>
-                                    <tool.icon size={24} />
-                                </button>
+
+                    {/* Main Content */}
+                    <div className="max-w-2xl mx-auto px-4 -mt-8 relative z-20">
+                        
+                        {/* Filters */}
+                        <div className="flex gap-2 mb-8 overflow-x-auto pb-2 scrollbar-hide">
+                            <FilterButton 
+                                active={filter === 'all'} 
+                                onClick={() => setFilter('all')} 
+                                icon={IconStar} 
+                                label="All Spots" 
+                            />
+                            <FilterButton 
+                                active={filter === 'food'} 
+                                onClick={() => setFilter('food')} 
+                                icon={IconUtensils} 
+                                label="Eats" 
+                            />
+                            <FilterButton 
+                                active={filter === 'drinks'} 
+                                onClick={() => setFilter('drinks')} 
+                                icon={IconWine} 
+                                label="Drinks" 
+                            />
+                        </div>
+
+                        {/* List */}
+                        <div className="space-y-4">
+                            {filteredLocations.length === 0 && (
+                                <div className="text-center py-20 text-slate-400">
+                                    <IconInfo className="mx-auto mb-2 opacity-50" size={48} />
+                                    <p>No spots found for this filter!</p>
+                                </div>
+                            )}
+
+                            {filteredLocations.map((loc) => (
+                                <LocationCard key={loc.id} location={loc} distance={loc.distance} />
                             ))}
                         </div>
+
+                        {/* Footer */}
+                        <div className="mt-12 text-center text-slate-400 text-sm pb-8">
+                            <p className="flex items-center justify-center gap-1">
+                                Made with <IconHeart size={12} className="text-rose-400 fill-rose-400" /> for the Bride
+                            </p>
+                        </div>
+
                     </div>
                 </div>
             );
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<FocusAnchor />);
+        root.render(<App />);
     </script>
 </body>
 </html>
