@@ -15,6 +15,10 @@
     <!-- Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+    <!-- Leaflet CSS & JS (For the Map) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
 
@@ -22,13 +26,59 @@
         body { font-family: 'Inter', sans-serif; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Map Marker Styles */
+        .custom-div-icon {
+            background: transparent;
+            border: none;
+        }
+        .marker-pin {
+            width: 30px;
+            height: 30px;
+            border-radius: 50% 50% 50% 0;
+            position: absolute;
+            transform: rotate(-45deg);
+            left: 50%;
+            top: 50%;
+            margin: -15px 0 0 -15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        }
+        .marker-pin::after {
+            content: '';
+            width: 14px;
+            height: 14px;
+            margin: 8px 0 0 8px;
+            background: #fff;
+            position: absolute;
+            border-radius: 50%;
+        }
+        .marker-icon-svg {
+            position: absolute;
+            width: 22px;
+            font-size: 22px;
+            left: 0;
+            right: 0;
+            margin: 10px auto;
+            text-align: center;
+            z-index: 10;
+        }
+        /* Custom Popup Styles */
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px;
+            padding: 0;
+            overflow: hidden;
+        }
+        .leaflet-popup-content {
+            margin: 0;
+            width: 200px !important;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useMemo } = React;
+        const { useState, useMemo, useEffect, useRef } = React;
 
         // --- ICONS ---
         const IconMapPin = ({ size = 24, className = "" }) => (
@@ -52,6 +102,16 @@
         const IconInfo = ({ size = 24, className = "" }) => (
             <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
         );
+        const IconList = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+        );
+        const IconMap = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+        );
+        const IconHome = ({ size = 24, className = "" }) => (
+             <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        );
+
 
         // --- DATA ---
         const AIRBNB = {
@@ -63,371 +123,41 @@
 
         const LOCATIONS = [
             // --- FOOD ---
-            {
-                id: 2,
-                name: "GW Fins",
-                address: "808 Bienville St, New Orleans, LA 70112",
-                type: "food",
-                vibe: "Upscale Seafood",
-                neighborhood: "French Quarter",
-                notes: "Dry aged fish. Fancy. Reservations required.",
-                lat: 29.9545,
-                lng: -90.0690
-            },
-            {
-                id: 3,
-                name: "Pizza Domenica",
-                address: "4933 Magazine St, New Orleans, LA 70115",
-                type: "food",
-                vibe: "Chill / Gourmet Pizza",
-                neighborhood: "Uptown",
-                notes: "Great happy hour. Chill spot on Magazine St.",
-                lat: 29.9215,
-                lng: -90.1100
-            },
-            {
-                id: 4,
-                name: "Herbsaint",
-                address: "701 St Charles Ave, New Orleans, LA 70130",
-                type: "food",
-                vibe: "French / Southern / Fancy",
-                neighborhood: "CBD",
-                notes: "James Beard award winner. Classic balcony dining if lucky.",
-                lat: 29.9500,
-                lng: -90.0700
-            },
-            {
-                id: 5,
-                name: "Paladar 511",
-                address: "511 Marigny St, New Orleans, LA 70117",
-                type: "food",
-                vibe: "Trendy Italian",
-                neighborhood: "Marigny",
-                notes: "Super cute loft vibe. Great pasta and pizza.",
-                lat: 29.9630,
-                lng: -90.0580
-            },
-            {
-                id: 6,
-                name: "Costera",
-                address: "4938 Prytania St, New Orleans, LA 70115",
-                type: "food",
-                vibe: "Spanish Tapas",
-                neighborhood: "Uptown",
-                notes: "Shareable plates, great happy hour sangria.",
-                lat: 29.9250,
-                lng: -90.1110
-            },
-            {
-                id: 7,
-                name: "Commander's Palace",
-                address: "1403 Washington Ave, New Orleans, LA 70130",
-                type: "food",
-                vibe: "The Classic / Jazz Brunch",
-                neighborhood: "Garden District",
-                notes: "$.25 Martinis at lunch (limit 3). Dress code enforced!",
-                lat: 29.9288,
-                lng: -90.0842
-            },
-            {
-                id: 8,
-                name: "Galatoire's",
-                address: "209 Bourbon St, New Orleans, LA 70130",
-                type: "food",
-                vibe: "Rowdy Fine Dining",
-                neighborhood: "French Quarter",
-                notes: "Get a seat downstairs for the real party. Friday lunch is legendary.",
-                lat: 29.9549,
-                lng: -90.0690
-            },
-            {
-                id: 9,
-                name: "Cochon",
-                address: "930 Tchoupitoulas St, New Orleans, LA 70130",
-                type: "food",
-                vibe: "Cajun / Rustic",
-                neighborhood: "Warehouse Dist.",
-                notes: "Meat-heavy, incredible wood-fired oysters.",
-                lat: 29.9422,
-                lng: -90.0672
-            },
-            {
-                id: 20,
-                name: "Pêche Seafood Grill",
-                address: "800 Magazine St, New Orleans, LA 70130",
-                type: "food",
-                vibe: "Rustic Seafood",
-                neighborhood: "Warehouse Dist.",
-                notes: "Incredible whole fish. James Beard winner. Lively.",
-                lat: 29.9450,
-                lng: -90.0690
-            },
-            {
-                id: 21,
-                name: "Coquette",
-                address: "2800 Magazine St, New Orleans, LA 70115",
-                type: "food",
-                vibe: "Modern Southern",
-                neighborhood: "Garden District",
-                notes: "Farm-to-table. Beautiful corner building. Great wine list.",
-                lat: 29.9270,
-                lng: -90.0860
-            },
-            {
-                id: 22,
-                name: "Lilette",
-                address: "3637 Magazine St, New Orleans, LA 70115",
-                type: "food",
-                vibe: "Classic French",
-                neighborhood: "Uptown",
-                notes: "Intimate, romantic, small plates.",
-                lat: 29.9240,
-                lng: -90.0960
-            },
-            {
-                id: 23,
-                name: "Clancy's",
-                address: "6100 Annunciation St, New Orleans, LA 70118",
-                type: "food",
-                vibe: "Old School Creole",
-                neighborhood: "Uptown",
-                notes: "Local favorite. White tablecloths but loud and fun.",
-                lat: 29.9220,
-                lng: -90.1230
-            },
-            {
-                id: 24,
-                name: "Parkway Bakery & Tavern",
-                address: "538 Hagan Ave, New Orleans, LA 70119",
-                type: "food",
-                vibe: "Po-Boys / Casual",
-                neighborhood: "Mid-City",
-                notes: "Legendary roast beef po-boys. Order at counter.",
-                lat: 29.9740,
-                lng: -90.0930
-            },
-            {
-                id: 25,
-                name: "Guy's Po-Boys",
-                address: "5259 Magazine St, New Orleans, LA 70115",
-                type: "food",
-                vibe: "Po-Boy Shop",
-                neighborhood: "Uptown",
-                notes: "Classic neighborhood spot. Great fried shrimp.",
-                lat: 29.9200,
-                lng: -90.1160
-            },
-            {
-                id: 34,
-                name: "Afrodisiac",
-                address: "5363 Franklin Ave, New Orleans, LA 70122",
-                type: "food",
-                vibe: "Creole Fusion / Music",
-                neighborhood: "Gentilly",
-                notes: "Vibrant spot for food and culture.",
-                lat: 30.0150,
-                lng: -90.0640
-            },
+            { id: 2, name: "GW Fins", address: "808 Bienville St", type: "food", vibe: "Upscale Seafood", neighborhood: "French Quarter", notes: "Dry aged fish. Fancy. Reservations required.", lat: 29.9545, lng: -90.0690 },
+            { id: 3, name: "Pizza Domenica", address: "4933 Magazine St", type: "food", vibe: "Chill / Gourmet Pizza", neighborhood: "Uptown", notes: "Great happy hour. Chill spot on Magazine St.", lat: 29.9215, lng: -90.1100 },
+            { id: 4, name: "Herbsaint", address: "701 St Charles Ave", type: "food", vibe: "French / Southern / Fancy", neighborhood: "CBD", notes: "James Beard award winner. Classic balcony dining if lucky.", lat: 29.9500, lng: -90.0700 },
+            { id: 5, name: "Paladar 511", address: "511 Marigny St", type: "food", vibe: "Trendy Italian", neighborhood: "Marigny", notes: "Super cute loft vibe. Great pasta and pizza.", lat: 29.9630, lng: -90.0580 },
+            { id: 6, name: "Costera", address: "4938 Prytania St", type: "food", vibe: "Spanish Tapas", neighborhood: "Uptown", notes: "Shareable plates, great happy hour sangria.", lat: 29.9250, lng: -90.1110 },
+            { id: 7, name: "Commander's Palace", address: "1403 Washington Ave", type: "food", vibe: "The Classic / Jazz Brunch", neighborhood: "Garden District", notes: "$.25 Martinis at lunch (limit 3). Dress code enforced!", lat: 29.9288, lng: -90.0842 },
+            { id: 8, name: "Galatoire's", address: "209 Bourbon St", type: "food", vibe: "Rowdy Fine Dining", neighborhood: "French Quarter", notes: "Get a seat downstairs for the real party. Friday lunch is legendary.", lat: 29.9549, lng: -90.0690 },
+            { id: 9, name: "Cochon", address: "930 Tchoupitoulas St", type: "food", vibe: "Cajun / Rustic", neighborhood: "Warehouse Dist.", notes: "Meat-heavy, incredible wood-fired oysters.", lat: 29.9422, lng: -90.0672 },
+            { id: 20, name: "Pêche Seafood Grill", address: "800 Magazine St", type: "food", vibe: "Rustic Seafood", neighborhood: "Warehouse Dist.", notes: "Incredible whole fish. James Beard winner. Lively.", lat: 29.9450, lng: -90.0690 },
+            { id: 21, name: "Coquette", address: "2800 Magazine St", type: "food", vibe: "Modern Southern", neighborhood: "Garden District", notes: "Farm-to-table. Beautiful corner building. Great wine list.", lat: 29.9270, lng: -90.0860 },
+            { id: 22, name: "Lilette", address: "3637 Magazine St", type: "food", vibe: "Classic French", neighborhood: "Uptown", notes: "Intimate, romantic, small plates.", lat: 29.9240, lng: -90.0960 },
+            { id: 23, name: "Clancy's", address: "6100 Annunciation St", type: "food", vibe: "Old School Creole", neighborhood: "Uptown", notes: "Local favorite. White tablecloths but loud and fun.", lat: 29.9220, lng: -90.1230 },
+            { id: 24, name: "Parkway Bakery & Tavern", address: "538 Hagan Ave", type: "food", vibe: "Po-Boys / Casual", neighborhood: "Mid-City", notes: "Legendary roast beef po-boys. Order at counter.", lat: 29.9740, lng: -90.0930 },
+            { id: 25, name: "Guy's Po-Boys", address: "5259 Magazine St", type: "food", vibe: "Po-Boy Shop", neighborhood: "Uptown", notes: "Classic neighborhood spot. Great fried shrimp.", lat: 29.9200, lng: -90.1160 },
+            { id: 34, name: "Afrodisiac", address: "5363 Franklin Ave", type: "food", vibe: "Creole Fusion / Music", neighborhood: "Gentilly", notes: "Vibrant spot for food and culture.", lat: 30.0150, lng: -90.0640 },
 
             // --- DRINKS / NIGHTLIFE ---
-            {
-                id: 1,
-                name: "Bacchanal Fine Wine",
-                address: "600 Poland Avenue, New Orleans, LA, 70117",
-                type: "drinks",
-                vibe: "Wine Garden / Live Jazz",
-                neighborhood: "Bywater",
-                notes: "Think 'Lagniappe in Miami'. Huge courtyard, buy a bottle & cheese, listen to jazz.",
-                lat: 29.9600,
-                lng: -90.0300
-            },
-            {
-                id: 10,
-                name: "Wrong Iron",
-                address: "3532 Toulouse St, New Orleans, LA 70119",
-                type: "drinks",
-                vibe: "Beer Garden / Outdoor",
-                neighborhood: "Mid-City",
-                notes: "On the Greenway. Chill, watch football, lots of locals.",
-                lat: 29.9720,
-                lng: -90.0900
-            },
-            {
-                id: 11,
-                name: "The Delachaise",
-                address: "3442 St Charles Ave, New Orleans, LA 70115",
-                type: "drinks",
-                vibe: "Wine Bar / Date Night",
-                neighborhood: "Uptown",
-                notes: "Get the goose fat fries. Right on the streetcar line.",
-                lat: 29.9280,
-                lng: -90.0950
-            },
-            {
-                id: 12,
-                name: "Oak & Ale",
-                address: "8118 Oak St, New Orleans, LA 70118",
-                type: "drinks",
-                vibe: "Wine / Snacks",
-                neighborhood: "Carrollton",
-                notes: "Cute patio, chill happy hour.",
-                lat: 29.9480,
-                lng: -90.1300
-            },
-            {
-                id: 13,
-                name: "Peacock Room",
-                address: "501 Tchoupitoulas St, New Orleans, LA 70130",
-                type: "drinks",
-                vibe: "Swanky Hotel Bar",
-                neighborhood: "CBD",
-                notes: "Inside Hotel Fontenot. Very instagrammable decor.",
-                lat: 29.9485,
-                lng: -90.0672
-            },
-            {
-                id: 14,
-                name: "The Will & The Way",
-                address: "719 Toulouse St, New Orleans, LA 70130",
-                type: "drinks",
-                vibe: "Craft Cocktails / Courtyard",
-                neighborhood: "French Quarter",
-                notes: "Hidden gem. Quiet courtyard compared to Bourbon St.",
-                lat: 29.9570,
-                lng: -90.0670
-            },
-            {
-                id: 15,
-                name: "Lucy's Retired Surfers",
-                address: "701 Tchoupitoulas St, New Orleans, LA 70130",
-                type: "drinks",
-                vibe: "Party / Dancing",
-                neighborhood: "Warehouse Dist.",
-                notes: "Late night spot. Dance on tables. Locals love it.",
-                lat: 29.9460,
-                lng: -90.0660
-            },
-            {
-                id: 16,
-                name: "Pat O'Brien's",
-                address: "718 St Peter, New Orleans, LA 70116",
-                type: "drinks",
-                vibe: "Tourist Classic / Piano Bar",
-                neighborhood: "French Quarter",
-                notes: "Home of the Hurricane. Dueling pianos inside.",
-                lat: 29.9581,
-                lng: -90.0655
-            },
-            {
-                id: 17,
-                name: "Cat's Meow",
-                address: "701 Bourbon St, New Orleans, LA 70116",
-                type: "drinks",
-                vibe: "Karaoke / Loud",
-                neighborhood: "French Quarter",
-                notes: "If you want to sing or watch drunk people sing.",
-                lat: 29.9580,
-                lng: -90.0660
-            },
-            {
-                id: 18,
-                name: "Lafitte's Blacksmith Shop",
-                address: "941 Bourbon St, New Orleans, LA 70116",
-                type: "drinks",
-                vibe: "Historic / Divey",
-                neighborhood: "French Quarter",
-                notes: "Oldest bar in US. Lit by candles. Get the purple drink (Voodoo).",
-                lat: 29.9607,
-                lng: -90.0640
-            },
-            {
-                id: 19,
-                name: "F&M Patio Bar & Grits",
-                address: "4841 Tchoupitoulas St, New Orleans, LA 70115",
-                type: "drinks",
-                vibe: "Late Night / Dive",
-                neighborhood: "Uptown",
-                notes: "Combine them! Cheese fries at F&Ms, dive vibes next door.",
-                lat: 29.9190,
-                lng: -90.1050
-            },
-            {
-                id: 26,
-                name: "The Elysian Bar",
-                address: "2317 Burgundy St, New Orleans, LA 70117",
-                type: "drinks",
-                vibe: "Aesthetic / Garden",
-                neighborhood: "Marigny",
-                notes: "Inside Hotel Peter and Paul. Stunning decor, great for photos.",
-                lat: 29.9670,
-                lng: -90.0550
-            },
-            {
-                id: 27,
-                name: "Carousel Bar",
-                address: "214 Royal St, New Orleans, LA 70130",
-                type: "drinks",
-                vibe: "Upscale / Iconic",
-                neighborhood: "French Quarter",
-                notes: "Inside Hotel Monteleone. The bar actually spins.",
-                lat: 29.9550,
-                lng: -90.0680
-            },
-            {
-                id: 28,
-                name: "The Chloe",
-                address: "4125 St Charles Ave, New Orleans, LA 70115",
-                type: "drinks",
-                vibe: "Poolside / Chic",
-                neighborhood: "Uptown",
-                notes: "Boutique hotel. Great porch and pool bar.",
-                lat: 29.9280,
-                lng: -90.1020
-            },
-            {
-                id: 29,
-                name: "Cure",
-                address: "4905 Freret St, New Orleans, LA 70115",
-                type: "drinks",
-                vibe: "High-End Cocktails",
-                neighborhood: "Freret",
-                notes: "James Beard winner. The place for a serious drink.",
-                lat: 29.9360,
-                lng: -90.1080
-            },
-            {
-                id: 30,
-                name: "Hot Tin",
-                address: "2031 St Charles Ave, New Orleans, LA 70130",
-                type: "drinks",
-                vibe: "Rooftop / Views",
-                neighborhood: "Garden District",
-                notes: "Rooftop of Pontchartrain Hotel. Best skyline view.",
-                lat: 29.9370,
-                lng: -90.0780
-            },
-            {
-                id: 31,
-                name: "The Gold Mine",
-                address: "701 Dauphine St, New Orleans, LA 70112",
-                type: "drinks",
-                vibe: "Dancing / Flaming Drinks",
-                neighborhood: "French Quarter",
-                notes: "Order the Flaming Dr. Pepper. Late night dancing.",
-                lat: 29.9570,
-                lng: -90.0690
-            },
-            {
-                id: 32,
-                name: "Snake and Jake's",
-                address: "7612 Oak St, New Orleans, LA 70118",
-                type: "drinks",
-                vibe: "Ultimate Dive",
-                neighborhood: "Uptown",
-                notes: "Christmas lights year round. Late late night spot.",
-                lat: 29.9470,
-                lng: -90.1280
-            }
+            { id: 1, name: "Bacchanal Fine Wine", address: "600 Poland Avenue", type: "drinks", vibe: "Wine Garden / Live Jazz", neighborhood: "Bywater", notes: "Huge courtyard, buy a bottle & cheese, listen to jazz.", lat: 29.9600, lng: -90.0300 },
+            { id: 10, name: "Wrong Iron", address: "3532 Toulouse St", type: "drinks", vibe: "Beer Garden / Outdoor", neighborhood: "Mid-City", notes: "On the Greenway. Chill, watch football, lots of locals.", lat: 29.9720, lng: -90.0900 },
+            { id: 11, name: "The Delachaise", address: "3442 St Charles Ave", type: "drinks", vibe: "Wine Bar / Date Night", neighborhood: "Uptown", notes: "Get the goose fat fries. Right on the streetcar line.", lat: 29.9280, lng: -90.0950 },
+            { id: 12, name: "Oak & Ale", address: "8118 Oak St", type: "drinks", vibe: "Wine / Snacks", neighborhood: "Carrollton", notes: "Cute patio, chill happy hour.", lat: 29.9480, lng: -90.1300 },
+            { id: 13, name: "Peacock Room", address: "501 Tchoupitoulas St", type: "drinks", vibe: "Swanky Hotel Bar", neighborhood: "CBD", notes: "Inside Hotel Fontenot. Very instagrammable decor.", lat: 29.9485, lng: -90.0672 },
+            { id: 14, name: "The Will & The Way", address: "719 Toulouse St", type: "drinks", vibe: "Craft Cocktails / Courtyard", neighborhood: "French Quarter", notes: "Hidden gem. Quiet courtyard compared to Bourbon St.", lat: 29.9570, lng: -90.0670 },
+            { id: 15, name: "Lucy's Retired Surfers", address: "701 Tchoupitoulas St", type: "drinks", vibe: "Party / Dancing", neighborhood: "Warehouse Dist.", notes: "Late night spot. Dance on tables. Locals love it.", lat: 29.9460, lng: -90.0660 },
+            { id: 16, name: "Pat O'Brien's", address: "718 St Peter", type: "drinks", vibe: "Tourist Classic / Piano Bar", neighborhood: "French Quarter", notes: "Home of the Hurricane. Dueling pianos inside.", lat: 29.9581, lng: -90.0655 },
+            { id: 17, name: "Cat's Meow", address: "701 Bourbon St", type: "drinks", vibe: "Karaoke / Loud", neighborhood: "French Quarter", notes: "If you want to sing or watch drunk people sing.", lat: 29.9580, lng: -90.0660 },
+            { id: 18, name: "Lafitte's Blacksmith Shop", address: "941 Bourbon St", type: "drinks", vibe: "Historic / Divey", neighborhood: "French Quarter", notes: "Oldest bar in US. Lit by candles. Get the purple drink.", lat: 29.9607, lng: -90.0640 },
+            { id: 19, name: "F&M Patio Bar & Grits", address: "4841 Tchoupitoulas St", type: "drinks", vibe: "Late Night / Dive", neighborhood: "Uptown", notes: "Combine them! Cheese fries at F&Ms, dive vibes next door.", lat: 29.9190, lng: -90.1050 },
+            { id: 26, name: "The Elysian Bar", address: "2317 Burgundy St", type: "drinks", vibe: "Aesthetic / Garden", neighborhood: "Marigny", notes: "Inside Hotel Peter and Paul. Stunning decor, great for photos.", lat: 29.9670, lng: -90.0550 },
+            { id: 27, name: "Carousel Bar", address: "214 Royal St", type: "drinks", vibe: "Upscale / Iconic", neighborhood: "French Quarter", notes: "Inside Hotel Monteleone. The bar actually spins.", lat: 29.9550, lng: -90.0680 },
+            { id: 28, name: "The Chloe", address: "4125 St Charles Ave", type: "drinks", vibe: "Poolside / Chic", neighborhood: "Uptown", notes: "Boutique hotel. Great porch and pool bar.", lat: 29.9280, lng: -90.1020 },
+            { id: 29, name: "Cure", address: "4905 Freret St", type: "drinks", vibe: "High-End Cocktails", neighborhood: "Freret", notes: "James Beard winner. The place for a serious drink.", lat: 29.9360, lng: -90.1080 },
+            { id: 30, name: "Hot Tin", address: "2031 St Charles Ave", type: "drinks", vibe: "Rooftop / Views", neighborhood: "Garden District", notes: "Rooftop of Pontchartrain Hotel. Best skyline view.", lat: 29.9370, lng: -90.0780 },
+            { id: 31, name: "The Gold Mine", address: "701 Dauphine St", type: "drinks", vibe: "Dancing / Flaming Drinks", neighborhood: "French Quarter", notes: "Order the Flaming Dr. Pepper. Late night dancing.", lat: 29.9570, lng: -90.0690 },
+            { id: 32, name: "Snake and Jake's", address: "7612 Oak St", type: "drinks", vibe: "Ultimate Dive", neighborhood: "Uptown", notes: "Christmas lights year round. Late late night spot.", lat: 29.9470, lng: -90.1280 }
         ];
 
         // --- UTILS ---
@@ -443,10 +173,25 @@
         }
 
         // --- COMPONENTS ---
+
         const Badge = ({ children, colorClass }) => (
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colorClass}`}>
                 {children}
             </span>
+        );
+
+        const ToggleButton = ({ active, onClick, icon: Icon, label }) => (
+            <button
+                onClick={onClick}
+                className={`flex items-center justify-center gap-2 px-6 py-2 rounded-full font-bold transition-all duration-200 text-sm ${
+                active 
+                    ? 'bg-slate-900 text-white shadow-lg' 
+                    : 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-200'
+                }`}
+            >
+                <Icon size={16} />
+                {label}
+            </button>
         );
 
         const FilterButton = ({ active, onClick, icon: Icon, label }) => (
@@ -516,7 +261,90 @@
             );
         };
 
+        const MapView = ({ locations, airbnb }) => {
+            useEffect(() => {
+                // Initialize map
+                const map = L.map('map-container', {
+                    zoomControl: false
+                }).setView([29.945, -90.08], 13); // Centered roughly between Uptown and French Quarter
+
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                    subdomains: 'abcd',
+                    maxZoom: 20
+                }).addTo(map);
+                
+                // Add Zoom control to bottom right
+                L.control.zoom({
+                    position: 'bottomright'
+                }).addTo(map);
+
+                // --- ICONS ---
+                // Helper to create HTML for the markers
+                const createIcon = (color, type) => {
+                    const iconSvg = type === 'home' 
+                        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin: 6px auto;"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`
+                        : type === 'food'
+                            ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin: 6px auto;"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>`
+                            : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin: 6px auto;"><path d="M8 22h8"/><path d="M7 10h10"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z"/></svg>`;
+
+                    return L.divIcon({
+                        className: 'custom-div-icon',
+                        html: `<div style="background-color: ${color};" class="marker-pin"></div>${iconSvg}`,
+                        iconSize: [30, 42],
+                        iconAnchor: [15, 42]
+                    });
+                };
+
+                const homeIcon = createIcon('#f43f5e', 'home'); // Rose-500
+                const foodIcon = createIcon('#ea580c', 'food'); // Orange-600
+                const drinkIcon = createIcon('#9333ea', 'drink'); // Purple-600
+
+                // Add Airbnb Marker
+                L.marker([airbnb.lat, airbnb.lng], { icon: homeIcon })
+                    .addTo(map)
+                    .bindPopup(`
+                        <div class="font-sans">
+                            <h3 class="font-bold text-rose-500 text-sm mb-1">BACH HQ</h3>
+                            <p class="text-xs text-slate-600">${airbnb.address}</p>
+                        </div>
+                    `);
+
+                // Add Locations Markers
+                locations.forEach(loc => {
+                    const icon = loc.type === 'food' ? foodIcon : drinkIcon;
+                    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc.name + " " + loc.address)}`;
+
+                    L.marker([loc.lat, loc.lng], { icon: icon })
+                        .addTo(map)
+                        .bindPopup(`
+                            <div class="font-sans min-w-[150px]">
+                                <div class="flex items-center gap-1 mb-1">
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${loc.type === 'food' ? 'bg-orange-100 text-orange-700' : 'bg-purple-100 text-purple-700'}">${loc.type}</span>
+                                    <span class="text-[10px] text-slate-400 font-medium">${loc.neighborhood}</span>
+                                </div>
+                                <h3 class="font-bold text-slate-800 text-sm mb-1">${loc.name}</h3>
+                                <p class="text-xs text-slate-500 italic mb-2">"${loc.notes}"</p>
+                                <a href="${googleMapsUrl}" target="_blank" class="block text-center bg-slate-900 text-white text-xs py-1.5 rounded font-medium hover:bg-slate-700">Get Directions</a>
+                            </div>
+                        `);
+                });
+
+                // Cleanup on unmount
+                return () => {
+                    map.remove();
+                };
+            }, [locations, airbnb]);
+
+            return (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-2 h-[600px] relative z-0">
+                    <div id="map-container" className="w-full h-full rounded-xl z-0"></div>
+                </div>
+            );
+        };
+
         const App = () => {
+            const [viewMode, setViewMode] = useState('list'); // 'list' or 'map'
             const [filter, setFilter] = useState('all'); // all, food, drinks
             
             // Enhance locations with distance and sort
@@ -533,8 +361,6 @@
             }, [filter, processedLocations]);
 
             const copyAddress = () => {
-                // Clipboard API might require secure context or user interaction in some browser configs
-                // We use the modern API but wrap in try/catch just in case
                 try {
                     navigator.clipboard.writeText(AIRBNB.address).then(() => {
                         alert("Address copied!");
@@ -552,7 +378,6 @@
                     {/* Header / Hero */}
                     <div className="bg-gradient-to-r from-rose-400 to-orange-400 text-white pb-16 pt-10 px-6 rounded-b-[2.5rem] shadow-xl relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-                            {/* Abstract pattern circles */}
                             <div className="absolute top-[-20%] left-[-10%] w-64 h-64 rounded-full bg-white mix-blend-overlay"></div>
                             <div className="absolute bottom-[-20%] right-[-10%] w-80 h-80 rounded-full bg-white mix-blend-overlay"></div>
                         </div>
@@ -586,41 +411,65 @@
                     {/* Main Content */}
                     <div className="max-w-2xl mx-auto px-4 -mt-8 relative z-20">
                         
-                        {/* Filters */}
-                        <div className="flex gap-2 mb-8 overflow-x-auto pb-2 scrollbar-hide">
-                            <FilterButton 
-                                active={filter === 'all'} 
-                                onClick={() => setFilter('all')} 
-                                icon={IconStar} 
-                                label="All Spots" 
-                            />
-                            <FilterButton 
-                                active={filter === 'food'} 
-                                onClick={() => setFilter('food')} 
-                                icon={IconUtensils} 
-                                label="Eats" 
-                            />
-                            <FilterButton 
-                                active={filter === 'drinks'} 
-                                onClick={() => setFilter('drinks')} 
-                                icon={IconWine} 
-                                label="Drinks" 
-                            />
+                        {/* View Toggle */}
+                        <div className="flex justify-center mb-6">
+                            <div className="bg-white p-1 rounded-full shadow-md border border-slate-100 inline-flex">
+                                <ToggleButton 
+                                    active={viewMode === 'list'} 
+                                    onClick={() => setViewMode('list')} 
+                                    icon={IconList}
+                                    label="List"
+                                />
+                                <ToggleButton 
+                                    active={viewMode === 'map'} 
+                                    onClick={() => setViewMode('map')} 
+                                    icon={IconMap}
+                                    label="Map"
+                                />
+                            </div>
                         </div>
 
-                        {/* List */}
-                        <div className="space-y-4">
-                            {filteredLocations.length === 0 && (
-                                <div className="text-center py-20 text-slate-400">
-                                    <IconInfo className="mx-auto mb-2 opacity-50" size={48} />
-                                    <p>No spots found for this filter!</p>
-                                </div>
-                            )}
+                        {/* List Filters (Only show in List Mode) */}
+                        {viewMode === 'list' && (
+                            <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+                                <FilterButton 
+                                    active={filter === 'all'} 
+                                    onClick={() => setFilter('all')} 
+                                    icon={IconStar} 
+                                    label="All Spots" 
+                                />
+                                <FilterButton 
+                                    active={filter === 'food'} 
+                                    onClick={() => setFilter('food')} 
+                                    icon={IconUtensils} 
+                                    label="Eats" 
+                                />
+                                <FilterButton 
+                                    active={filter === 'drinks'} 
+                                    onClick={() => setFilter('drinks')} 
+                                    icon={IconWine} 
+                                    label="Drinks" 
+                                />
+                            </div>
+                        )}
 
-                            {filteredLocations.map((loc) => (
-                                <LocationCard key={loc.id} location={loc} distance={loc.distance} />
-                            ))}
-                        </div>
+                        {/* Content Area */}
+                        {viewMode === 'list' ? (
+                            <div className="space-y-4">
+                                {filteredLocations.length === 0 && (
+                                    <div className="text-center py-20 text-slate-400">
+                                        <IconInfo className="mx-auto mb-2 opacity-50" size={48} />
+                                        <p>No spots found for this filter!</p>
+                                    </div>
+                                )}
+
+                                {filteredLocations.map((loc) => (
+                                    <LocationCard key={loc.id} location={loc} distance={loc.distance} />
+                                ))}
+                            </div>
+                        ) : (
+                            <MapView locations={processedLocations} airbnb={AIRBNB} />
+                        )}
 
                         {/* Footer */}
                         <div className="mt-12 text-center text-slate-400 text-sm pb-8">
