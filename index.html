@@ -98,6 +98,12 @@
         const IconMap = ({ size = 24, className = "" }) => (
             <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
         );
+        const IconInstagram = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+        );
+        const IconGlobe = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        );
         
         // --- DATA ---
         const AIRBNB = {
@@ -109,41 +115,41 @@
 
         const LOCATIONS = [
             // --- FOOD ---
-            { id: 2, name: "GW Fins", address: "808 Bienville St", type: "food", vibe: "Upscale Seafood", neighborhood: "French Quarter", notes: "Dry aged fish. Fancy. Reservations required.", lat: 29.9545, lng: -90.0690, tags: ['classy'] },
-            { id: 3, name: "Pizza Domenica", address: "4933 Magazine St", type: "food", vibe: "Chill / Gourmet Pizza", neighborhood: "Uptown", notes: "Great happy hour. Chill spot on Magazine St.", lat: 29.9215, lng: -90.1100, tags: ['chill'] },
-            { id: 4, name: "Herbsaint", address: "701 St Charles Ave", type: "food", vibe: "French / Southern / Fancy", neighborhood: "CBD", notes: "James Beard award winner. Classic balcony dining if lucky.", lat: 29.9500, lng: -90.0700, tags: ['classy'] },
-            { id: 5, name: "Paladar 511", address: "511 Marigny St", type: "food", vibe: "Trendy Italian", neighborhood: "Marigny", notes: "Super cute loft vibe. Great pasta and pizza.", lat: 29.9630, lng: -90.0580, tags: ['classy', 'chill'] },
-            { id: 6, name: "Costera", address: "4938 Prytania St", type: "food", vibe: "Spanish Tapas", neighborhood: "Uptown", notes: "Shareable plates, great happy hour sangria.", lat: 29.9250, lng: -90.1110, tags: ['classy', 'chill'] },
-            { id: 7, name: "Commander's Palace", address: "1403 Washington Ave", type: "food", vibe: "The Classic / Jazz Brunch", neighborhood: "Garden District", notes: "$.25 Martinis at lunch (limit 3). Dress code enforced!", lat: 29.9288, lng: -90.0842, tags: ['classy'] },
-            { id: 8, name: "Galatoire's", address: "209 Bourbon St", type: "food", vibe: "Rowdy Fine Dining", neighborhood: "French Quarter", notes: "Get a seat downstairs for the real party. Friday lunch is legendary.", lat: 29.9549, lng: -90.0690, tags: ['party', 'classy'] },
-            { id: 9, name: "Cochon", address: "930 Tchoupitoulas St", type: "food", vibe: "Cajun / Rustic", neighborhood: "Warehouse Dist.", notes: "Meat-heavy, incredible wood-fired oysters.", lat: 29.9422, lng: -90.0672, tags: ['chill'] },
-            { id: 20, name: "Pêche Seafood Grill", address: "800 Magazine St", type: "food", vibe: "Rustic Seafood", neighborhood: "Warehouse Dist.", notes: "Incredible whole fish. James Beard winner. Lively.", lat: 29.9450, lng: -90.0690, tags: ['chill', 'classy'] },
-            { id: 21, name: "Coquette", address: "2800 Magazine St", type: "food", vibe: "Modern Southern", neighborhood: "Garden District", notes: "Farm-to-table. Beautiful corner building. Great wine list.", lat: 29.9270, lng: -90.0860, tags: ['classy'] },
-            { id: 22, name: "Lilette", address: "3637 Magazine St", type: "food", vibe: "Classic French", neighborhood: "Uptown", notes: "Intimate, romantic, small plates.", lat: 29.9240, lng: -90.0960, tags: ['classy'] },
-            { id: 23, name: "Clancy's", address: "6100 Annunciation St", type: "food", vibe: "Old School Creole", neighborhood: "Uptown", notes: "Local favorite. White tablecloths but loud and fun.", lat: 29.9220, lng: -90.1230, tags: ['classy'] },
-            { id: 24, name: "Parkway Bakery & Tavern", address: "538 Hagan Ave", type: "food", vibe: "Po-Boys / Casual", neighborhood: "Mid-City", notes: "Legendary roast beef po-boys. Order at counter.", lat: 29.9740, lng: -90.0930, tags: ['chill'] },
-            { id: 25, name: "Guy's Po-Boys", address: "5259 Magazine St", type: "food", vibe: "Po-Boy Shop", neighborhood: "Uptown", notes: "Classic neighborhood spot. Great fried shrimp.", lat: 29.9200, lng: -90.1160, tags: ['chill'] },
-            { id: 34, name: "Afrodisiac", address: "5363 Franklin Ave", type: "food", vibe: "Creole Fusion / Music", neighborhood: "Gentilly", notes: "Vibrant spot for food and culture.", lat: 30.0150, lng: -90.0640, tags: ['chill'] },
+            { id: 2, name: "GW Fins", address: "808 Bienville St", type: "food", vibe: "Upscale Seafood", neighborhood: "French Quarter", notes: "Dry aged fish. Fancy. Reservations required.", lat: 29.9545, lng: -90.0690, tags: ['classy'], link: "https://gwfins.com/" },
+            { id: 3, name: "Pizza Domenica", address: "4933 Magazine St", type: "food", vibe: "Chill / Gourmet Pizza", neighborhood: "Uptown", notes: "Great happy hour. Chill spot on Magazine St.", lat: 29.9215, lng: -90.1100, tags: ['chill'], link: "https://www.instagram.com/pizzadomenica/" },
+            { id: 4, name: "Herbsaint", address: "701 St Charles Ave", type: "food", vibe: "French / Southern / Fancy", neighborhood: "CBD", notes: "James Beard award winner. Classic balcony dining if lucky.", lat: 29.9500, lng: -90.0700, tags: ['classy'], link: "https://herbsaint.com/" },
+            { id: 5, name: "Paladar 511", address: "511 Marigny St", type: "food", vibe: "Trendy Italian", neighborhood: "Marigny", notes: "Super cute loft vibe. Great pasta and pizza.", lat: 29.9630, lng: -90.0580, tags: ['classy', 'chill'], link: "https://www.instagram.com/paladar511/" },
+            { id: 6, name: "Costera", address: "4938 Prytania St", type: "food", vibe: "Spanish Tapas", neighborhood: "Uptown", notes: "Shareable plates, great happy hour sangria.", lat: 29.9250, lng: -90.1110, tags: ['classy', 'chill'], link: "https://www.instagram.com/costeranola/" },
+            { id: 7, name: "Commander's Palace", address: "1403 Washington Ave", type: "food", vibe: "The Classic / Jazz Brunch", neighborhood: "Garden District", notes: "$.25 Martinis at lunch (limit 3). Dress code enforced!", lat: 29.9288, lng: -90.0842, tags: ['classy'], link: "https://www.instagram.com/commanderspalace/" },
+            { id: 8, name: "Galatoire's", address: "209 Bourbon St", type: "food", vibe: "Rowdy Fine Dining", neighborhood: "French Quarter", notes: "Get a seat downstairs for the real party. Friday lunch is legendary.", lat: 29.9549, lng: -90.0690, tags: ['party', 'classy'], link: "https://www.instagram.com/galatoiresrestaurant/" },
+            { id: 9, name: "Cochon", address: "930 Tchoupitoulas St", type: "food", vibe: "Cajun / Rustic", neighborhood: "Warehouse Dist.", notes: "Meat-heavy, incredible wood-fired oysters.", lat: 29.9422, lng: -90.0672, tags: ['chill'], link: "https://www.instagram.com/cochon_nola/" },
+            { id: 20, name: "Pêche Seafood Grill", address: "800 Magazine St", type: "food", vibe: "Rustic Seafood", neighborhood: "Warehouse Dist.", notes: "Incredible whole fish. James Beard winner. Lively.", lat: 29.9450, lng: -90.0690, tags: ['chill', 'classy'], link: "https://www.instagram.com/pechenola/" },
+            { id: 21, name: "Coquette", address: "2800 Magazine St", type: "food", vibe: "Modern Southern", neighborhood: "Garden District", notes: "Farm-to-table. Beautiful corner building. Great wine list.", lat: 29.9270, lng: -90.0860, tags: ['classy'], link: "https://www.instagram.com/coquette_nola/" },
+            { id: 22, name: "Lilette", address: "3637 Magazine St", type: "food", vibe: "Classic French", neighborhood: "Uptown", notes: "Intimate, romantic, small plates.", lat: 29.9240, lng: -90.0960, tags: ['classy'], link: "https://www.instagram.com/lilette_restaurant/" },
+            { id: 23, name: "Clancy's", address: "6100 Annunciation St", type: "food", vibe: "Old School Creole", neighborhood: "Uptown", notes: "Local favorite. White tablecloths but loud and fun.", lat: 29.9220, lng: -90.1230, tags: ['classy'], link: "https://www.clancysneworleans.com/" },
+            { id: 24, name: "Parkway Bakery & Tavern", address: "538 Hagan Ave", type: "food", vibe: "Po-Boys / Casual", neighborhood: "Mid-City", notes: "Legendary roast beef po-boys. Order at counter.", lat: 29.9740, lng: -90.0930, tags: ['chill'], link: "https://www.instagram.com/parkwaypoorboys/" },
+            { id: 25, name: "Guy's Po-Boys", address: "5259 Magazine St", type: "food", vibe: "Po-Boy Shop", neighborhood: "Uptown", notes: "Classic neighborhood spot. Great fried shrimp.", lat: 29.9200, lng: -90.1160, tags: ['chill'], link: "https://www.instagram.com/guyspoboys/" },
+            { id: 34, name: "Afrodisiac", address: "5363 Franklin Ave", type: "food", vibe: "Creole Fusion / Music", neighborhood: "Gentilly", notes: "Vibrant spot for food and culture.", lat: 30.0150, lng: -90.0640, tags: ['chill'], link: "https://www.instagram.com/afrodisiacnola/" },
 
             // --- DRINKS / NIGHTLIFE ---
-            { id: 1, name: "Bacchanal Fine Wine", address: "600 Poland Avenue", type: "drinks", vibe: "Wine Garden / Live Jazz", neighborhood: "Bywater", notes: "Huge courtyard, buy a bottle & cheese, listen to jazz.", lat: 29.9600, lng: -90.0300, tags: ['outdoor', 'chill'] },
-            { id: 10, name: "Wrong Iron", address: "3532 Toulouse St", type: "drinks", vibe: "Beer Garden / Outdoor", neighborhood: "Mid-City", notes: "On the Greenway. Chill, watch football, lots of locals.", lat: 29.9720, lng: -90.0900, tags: ['outdoor', 'chill'] },
-            { id: 11, name: "The Delachaise", address: "3442 St Charles Ave", type: "drinks", vibe: "Wine Bar / Date Night", neighborhood: "Uptown", notes: "Get the goose fat fries. Right on the streetcar line.", lat: 29.9280, lng: -90.0950, tags: ['chill', 'classy'] },
-            { id: 12, name: "Oak & Ale", address: "8118 Oak St", type: "drinks", vibe: "Wine / Snacks", neighborhood: "Carrollton", notes: "Cute patio, chill happy hour.", lat: 29.9480, lng: -90.1300, tags: ['chill', 'outdoor'] },
-            { id: 13, name: "Peacock Room", address: "501 Tchoupitoulas St", type: "drinks", vibe: "Swanky Hotel Bar", neighborhood: "CBD", notes: "Inside Hotel Fontenot. Very instagrammable decor.", lat: 29.9485, lng: -90.0672, tags: ['classy'] },
-            { id: 14, name: "The Will & The Way", address: "719 Toulouse St", type: "drinks", vibe: "Craft Cocktails / Courtyard", neighborhood: "French Quarter", notes: "Hidden gem. Quiet courtyard compared to Bourbon St.", lat: 29.9570, lng: -90.0670, tags: ['classy', 'outdoor'] },
-            { id: 15, name: "Lucy's Retired Surfers", address: "701 Tchoupitoulas St", type: "drinks", vibe: "Party / Dancing", neighborhood: "Warehouse Dist.", notes: "Late night spot. Dance on tables. Locals love it.", lat: 29.9460, lng: -90.0660, tags: ['party'] },
-            { id: 16, name: "Pat O'Brien's", address: "718 St Peter", type: "drinks", vibe: "Tourist Classic / Piano Bar", neighborhood: "French Quarter", notes: "Home of the Hurricane. Dueling pianos inside.", lat: 29.9581, lng: -90.0655, tags: ['party', 'outdoor'] },
-            { id: 17, name: "Cat's Meow", address: "701 Bourbon St", type: "drinks", vibe: "Karaoke / Loud", neighborhood: "French Quarter", notes: "If you want to sing or watch drunk people sing.", lat: 29.9580, lng: -90.0660, tags: ['party'] },
-            { id: 18, name: "Lafitte's Blacksmith Shop", address: "941 Bourbon St", type: "drinks", vibe: "Historic / Divey", neighborhood: "French Quarter", notes: "Oldest bar in US. Lit by candles. Get the purple drink.", lat: 29.9607, lng: -90.0640, tags: ['dive', 'party'] },
-            { id: 19, name: "F&M Patio Bar & Grits", address: "4841 Tchoupitoulas St", type: "drinks", vibe: "Late Night / Dive", neighborhood: "Uptown", notes: "Combine them! Cheese fries at F&Ms, dive vibes next door.", lat: 29.9190, lng: -90.1050, tags: ['dive', 'party'] },
-            { id: 26, name: "The Elysian Bar", address: "2317 Burgundy St", type: "drinks", vibe: "Aesthetic / Garden", neighborhood: "Marigny", notes: "Inside Hotel Peter and Paul. Stunning decor, great for photos.", lat: 29.9670, lng: -90.0550, tags: ['classy', 'outdoor'] },
-            { id: 27, name: "Carousel Bar", address: "214 Royal St", type: "drinks", vibe: "Upscale / Iconic", neighborhood: "French Quarter", notes: "Inside Hotel Monteleone. The bar actually spins.", lat: 29.9550, lng: -90.0680, tags: ['classy'] },
-            { id: 28, name: "The Chloe", address: "4125 St Charles Ave", type: "drinks", vibe: "Poolside / Chic", neighborhood: "Uptown", notes: "Boutique hotel. Great porch and pool bar.", lat: 29.9280, lng: -90.1020, tags: ['outdoor', 'classy'] },
-            { id: 29, name: "Cure", address: "4905 Freret St", type: "drinks", vibe: "High-End Cocktails", neighborhood: "Freret", notes: "James Beard winner. The place for a serious drink.", lat: 29.9360, lng: -90.1080, tags: ['classy'] },
-            { id: 30, name: "Hot Tin", address: "2031 St Charles Ave", type: "drinks", vibe: "Rooftop / Views", neighborhood: "Garden District", notes: "Rooftop of Pontchartrain Hotel. Best skyline view.", lat: 29.9370, lng: -90.0780, tags: ['outdoor', 'classy'] },
-            { id: 31, name: "The Gold Mine", address: "701 Dauphine St", type: "drinks", vibe: "Dancing / Flaming Drinks", neighborhood: "French Quarter", notes: "Order the Flaming Dr. Pepper. Late night dancing.", lat: 29.9570, lng: -90.0690, tags: ['party', 'dive'] },
-            { id: 32, name: "Snake and Jake's", address: "7612 Oak St", type: "drinks", vibe: "Ultimate Dive", neighborhood: "Uptown", notes: "Christmas lights year round. Late late night spot.", lat: 29.9470, lng: -90.1280, tags: ['dive'] }
+            { id: 1, name: "Bacchanal Fine Wine", address: "600 Poland Avenue", type: "drinks", vibe: "Wine Garden / Live Jazz", neighborhood: "Bywater", notes: "Huge courtyard, buy a bottle & cheese, listen to jazz.", lat: 29.9600, lng: -90.0300, tags: ['outdoor', 'chill'], link: "https://www.instagram.com/bacchanalwine/" },
+            { id: 10, name: "Wrong Iron", address: "3532 Toulouse St", type: "drinks", vibe: "Beer Garden / Outdoor", neighborhood: "Mid-City", notes: "On the Greenway. Chill, watch football, lots of locals.", lat: 29.9720, lng: -90.0900, tags: ['outdoor', 'chill'], link: "https://www.instagram.com/wrongiron/" },
+            { id: 11, name: "The Delachaise", address: "3442 St Charles Ave", type: "drinks", vibe: "Wine Bar / Date Night", neighborhood: "Uptown", notes: "Get the goose fat fries. Right on the streetcar line.", lat: 29.9280, lng: -90.0950, tags: ['chill', 'classy'], link: "https://www.instagram.com/thedelachaisenola/" },
+            { id: 12, name: "Oak & Ale", address: "8118 Oak St", type: "drinks", vibe: "Wine / Snacks", neighborhood: "Carrollton", notes: "Cute patio, chill happy hour.", lat: 29.9480, lng: -90.1300, tags: ['chill', 'outdoor'], link: "https://www.instagram.com/oakale_nola/" },
+            { id: 13, name: "Peacock Room", address: "501 Tchoupitoulas St", type: "drinks", vibe: "Swanky Hotel Bar", neighborhood: "CBD", notes: "Inside Hotel Fontenot. Very instagrammable decor.", lat: 29.9485, lng: -90.0672, tags: ['classy'], link: "https://www.instagram.com/peacockroomnola/" },
+            { id: 14, name: "The Will & The Way", address: "719 Toulouse St", type: "drinks", vibe: "Craft Cocktails / Courtyard", neighborhood: "French Quarter", notes: "Hidden gem. Quiet courtyard compared to Bourbon St.", lat: 29.9570, lng: -90.0670, tags: ['classy', 'outdoor'], link: "https://www.instagram.com/thewillandthewaynola/" },
+            { id: 15, name: "Lucy's Retired Surfers", address: "701 Tchoupitoulas St", type: "drinks", vibe: "Party / Dancing", neighborhood: "Warehouse Dist.", notes: "Late night spot. Dance on tables. Locals love it.", lat: 29.9460, lng: -90.0660, tags: ['party'], link: "https://www.instagram.com/lucysnola/" },
+            { id: 16, name: "Pat O'Brien's", address: "718 St Peter", type: "drinks", vibe: "Tourist Classic / Piano Bar", neighborhood: "French Quarter", notes: "Home of the Hurricane. Dueling pianos inside.", lat: 29.9581, lng: -90.0655, tags: ['party', 'outdoor'], link: "https://www.instagram.com/patobriens/" },
+            { id: 17, name: "Cat's Meow", address: "701 Bourbon St", type: "drinks", vibe: "Karaoke / Loud", neighborhood: "French Quarter", notes: "If you want to sing or watch drunk people sing.", lat: 29.9580, lng: -90.0660, tags: ['party'], link: "https://www.instagram.com/catsmeownola/" },
+            { id: 18, name: "Lafitte's Blacksmith Shop", address: "941 Bourbon St", type: "drinks", vibe: "Historic / Divey", neighborhood: "French Quarter", notes: "Oldest bar in US. Lit by candles. Get the purple drink.", lat: 29.9607, lng: -90.0640, tags: ['dive', 'party'], link: "https://www.instagram.com/lafittesblacksmithshopbar/" },
+            { id: 19, name: "F&M Patio Bar & Grits", address: "4841 Tchoupitoulas St", type: "drinks", vibe: "Late Night / Dive", neighborhood: "Uptown", notes: "Combine them! Cheese fries at F&Ms, dive vibes next door.", lat: 29.9190, lng: -90.1050, tags: ['dive', 'party'], link: "https://www.instagram.com/fmpatiobar/" },
+            { id: 26, name: "The Elysian Bar", address: "2317 Burgundy St", type: "drinks", vibe: "Aesthetic / Garden", neighborhood: "Marigny", notes: "Inside Hotel Peter and Paul. Stunning decor, great for photos.", lat: 29.9670, lng: -90.0550, tags: ['classy', 'outdoor'], link: "https://www.instagram.com/theelysianbar/" },
+            { id: 27, name: "Carousel Bar", address: "214 Royal St", type: "drinks", vibe: "Upscale / Iconic", neighborhood: "French Quarter", notes: "Inside Hotel Monteleone. The bar actually spins.", lat: 29.9550, lng: -90.0680, tags: ['classy'], link: "https://www.instagram.com/hotelmonteleone/" },
+            { id: 28, name: "The Chloe", address: "4125 St Charles Ave", type: "drinks", vibe: "Poolside / Chic", neighborhood: "Uptown", notes: "Boutique hotel. Great porch and pool bar.", lat: 29.9280, lng: -90.1020, tags: ['outdoor', 'classy'], link: "https://www.instagram.com/thechloenola/" },
+            { id: 29, name: "Cure", address: "4905 Freret St", type: "drinks", vibe: "High-End Cocktails", neighborhood: "Freret", notes: "James Beard winner. The place for a serious drink.", lat: 29.9360, lng: -90.1080, tags: ['classy'], link: "https://www.instagram.com/curenola/" },
+            { id: 30, name: "Hot Tin", address: "2031 St Charles Ave", type: "drinks", vibe: "Rooftop / Views", neighborhood: "Garden District", notes: "Rooftop of Pontchartrain Hotel. Best skyline view.", lat: 29.9370, lng: -90.0780, tags: ['outdoor', 'classy'], link: "https://www.instagram.com/hottinbar/" },
+            { id: 31, name: "The Gold Mine", address: "701 Dauphine St", type: "drinks", vibe: "Dancing / Flaming Drinks", neighborhood: "French Quarter", notes: "Order the Flaming Dr. Pepper. Late night dancing.", lat: 29.9570, lng: -90.0690, tags: ['party', 'dive'], link: "https://www.facebook.com/GoldMineSaloon/" },
+            { id: 32, name: "Snake and Jake's", address: "7612 Oak St", type: "drinks", vibe: "Ultimate Dive", neighborhood: "Uptown", notes: "Christmas lights year round. Late late night spot.", lat: 29.9470, lng: -90.1280, tags: ['dive'], link: "https://www.instagram.com/snakeandjakes/" }
         ];
 
         // --- UTILS ---
@@ -211,6 +217,9 @@
         const LocationCard = ({ location, distance }) => {
             const isWalkingDistance = distance < 0.8;
             const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.name + " " + location.address)}`;
+            const isInstagram = location.link && location.link.includes('instagram');
+            const LinkIcon = isInstagram ? IconInstagram : IconGlobe;
+            const linkLabel = isInstagram ? "Insta" : "Website";
 
             return (
                 <div className="group bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-xl hover:border-rose-100 transition-all duration-300">
@@ -248,15 +257,29 @@
                         <p className="text-sm text-slate-600 italic">"{location.notes}"</p>
                     </div>
 
-                    <a 
-                        href={mapUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-2.5 rounded-lg font-medium hover:bg-rose-500 transition-colors"
-                    >
-                        <IconNavigation size={16} />
-                        Map It
-                    </a>
+                    <div className="flex gap-2">
+                        <a 
+                            href={mapUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 flex items-center justify-center gap-2 bg-slate-900 text-white py-2.5 rounded-lg font-medium hover:bg-slate-800 transition-colors"
+                        >
+                            <IconNavigation size={16} />
+                            Map It
+                        </a>
+                        
+                        {location.link && (
+                             <a 
+                                href={location.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex-1 flex items-center justify-center gap-2 bg-rose-50 text-rose-600 py-2.5 rounded-lg font-medium hover:bg-rose-100 transition-colors border border-rose-100"
+                            >
+                                <LinkIcon size={16} />
+                                {linkLabel}
+                            </a>
+                        )}
+                    </div>
                 </div>
             );
         };
@@ -326,7 +349,10 @@
                                     </div>
                                     <h3 class="font-bold text-slate-800 text-sm mb-1">${loc.name}</h3>
                                     <p class="text-xs text-slate-500 italic mb-2">"${loc.notes}"</p>
-                                    <a href="${googleMapsUrl}" target="_blank" class="block text-center bg-slate-900 text-white text-xs py-1.5 rounded font-medium hover:bg-slate-700">Get Directions</a>
+                                    <div class="flex gap-1">
+                                        <a href="${googleMapsUrl}" target="_blank" class="flex-1 block text-center bg-slate-900 text-white text-xs py-1.5 rounded font-medium hover:bg-slate-700">Map</a>
+                                        ${loc.link ? `<a href="${loc.link}" target="_blank" class="flex-1 block text-center bg-rose-50 text-rose-600 border border-rose-200 text-xs py-1.5 rounded font-medium hover:bg-rose-100">Link</a>` : ''}
+                                    </div>
                                 </div>
                             `);
                     });
