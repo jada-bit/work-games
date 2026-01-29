@@ -52,16 +52,6 @@
             position: absolute;
             border-radius: 50%;
         }
-        .marker-icon-svg {
-            position: absolute;
-            width: 22px;
-            font-size: 22px;
-            left: 0;
-            right: 0;
-            margin: 10px auto;
-            text-align: center;
-            z-index: 10;
-        }
         /* Custom Popup Styles */
         .leaflet-popup-content-wrapper {
             border-radius: 12px;
@@ -108,11 +98,7 @@
         const IconMap = ({ size = 24, className = "" }) => (
             <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
         );
-        const IconHome = ({ size = 24, className = "" }) => (
-             <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        );
-
-
+        
         // --- DATA ---
         const AIRBNB = {
             name: "Bach HQ (The Airbnb)",
@@ -262,83 +248,114 @@
         };
 
         const MapView = ({ locations, airbnb }) => {
+            const mapRef = useRef(null);
+            
             useEffect(() => {
-                // Initialize map
-                const map = L.map('map-container', {
-                    zoomControl: false
-                }).setView([29.945, -90.08], 13); // Centered roughly between Uptown and French Quarter
+                // Initialize map if it doesn't exist
+                if (!mapRef.current) {
+                    mapRef.current = L.map('map-container', {
+                        zoomControl: false
+                    }).setView([29.945, -90.08], 13);
 
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-                    subdomains: 'abcd',
-                    maxZoom: 20
-                }).addTo(map);
-                
-                // Add Zoom control to bottom right
-                L.control.zoom({
-                    position: 'bottomright'
-                }).addTo(map);
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                        subdomains: 'abcd',
+                        maxZoom: 20
+                    }).addTo(mapRef.current);
+                    
+                    L.control.zoom({
+                        position: 'bottomright'
+                    }).addTo(mapRef.current);
 
-                // --- ICONS ---
-                // Helper to create HTML for the markers
-                const createIcon = (color, type) => {
-                    const iconSvg = type === 'home' 
-                        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin: 6px auto;"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`
-                        : type === 'food'
-                            ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin: 6px auto;"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>`
-                            : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin: 6px auto;"><path d="M8 22h8"/><path d="M7 10h10"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z"/></svg>`;
+                    // --- ICONS ---
+                    const createIcon = (color, type) => {
+                        const iconSvg = type === 'home' 
+                            ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin: 6px auto;"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`
+                            : type === 'food'
+                                ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin: 6px auto;"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>`
+                                : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin: 6px auto;"><path d="M8 22h8"/><path d="M7 10h10"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z"/></svg>`;
 
-                    return L.divIcon({
-                        className: 'custom-div-icon',
-                        html: `<div style="background-color: ${color};" class="marker-pin"></div>${iconSvg}`,
-                        iconSize: [30, 42],
-                        iconAnchor: [15, 42]
-                    });
-                };
+                        return L.divIcon({
+                            className: 'custom-div-icon',
+                            html: `<div style="background-color: ${color};" class="marker-pin"></div>${iconSvg}`,
+                            iconSize: [30, 42],
+                            iconAnchor: [15, 42]
+                        });
+                    };
 
-                const homeIcon = createIcon('#f43f5e', 'home'); // Rose-500
-                const foodIcon = createIcon('#ea580c', 'food'); // Orange-600
-                const drinkIcon = createIcon('#9333ea', 'drink'); // Purple-600
+                    const homeIcon = createIcon('#f43f5e', 'home'); 
+                    const foodIcon = createIcon('#ea580c', 'food');
+                    const drinkIcon = createIcon('#9333ea', 'drink');
 
-                // Add Airbnb Marker
-                L.marker([airbnb.lat, airbnb.lng], { icon: homeIcon })
-                    .addTo(map)
-                    .bindPopup(`
-                        <div class="font-sans">
-                            <h3 class="font-bold text-rose-500 text-sm mb-1">BACH HQ</h3>
-                            <p class="text-xs text-slate-600">${airbnb.address}</p>
-                        </div>
-                    `);
-
-                // Add Locations Markers
-                locations.forEach(loc => {
-                    const icon = loc.type === 'food' ? foodIcon : drinkIcon;
-                    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc.name + " " + loc.address)}`;
-
-                    L.marker([loc.lat, loc.lng], { icon: icon })
-                        .addTo(map)
+                    // Add Airbnb Marker
+                    L.marker([airbnb.lat, airbnb.lng], { icon: homeIcon })
+                        .addTo(mapRef.current)
                         .bindPopup(`
-                            <div class="font-sans min-w-[150px]">
-                                <div class="flex items-center gap-1 mb-1">
-                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${loc.type === 'food' ? 'bg-orange-100 text-orange-700' : 'bg-purple-100 text-purple-700'}">${loc.type}</span>
-                                    <span class="text-[10px] text-slate-400 font-medium">${loc.neighborhood}</span>
-                                </div>
-                                <h3 class="font-bold text-slate-800 text-sm mb-1">${loc.name}</h3>
-                                <p class="text-xs text-slate-500 italic mb-2">"${loc.notes}"</p>
-                                <a href="${googleMapsUrl}" target="_blank" class="block text-center bg-slate-900 text-white text-xs py-1.5 rounded font-medium hover:bg-slate-700">Get Directions</a>
+                            <div class="font-sans">
+                                <h3 class="font-bold text-rose-500 text-sm mb-1">BACH HQ</h3>
+                                <p class="text-xs text-slate-600">${airbnb.address}</p>
                             </div>
                         `);
-                });
+
+                    // Add Locations Markers
+                    locations.forEach(loc => {
+                        const icon = loc.type === 'food' ? foodIcon : drinkIcon;
+                        const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc.name + " " + loc.address)}`;
+
+                        L.marker([loc.lat, loc.lng], { icon: icon })
+                            .addTo(mapRef.current)
+                            .bindPopup(`
+                                <div class="font-sans min-w-[150px]">
+                                    <div class="flex items-center gap-1 mb-1">
+                                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${loc.type === 'food' ? 'bg-orange-100 text-orange-700' : 'bg-purple-100 text-purple-700'}">${loc.type}</span>
+                                        <span class="text-[10px] text-slate-400 font-medium">${loc.neighborhood}</span>
+                                    </div>
+                                    <h3 class="font-bold text-slate-800 text-sm mb-1">${loc.name}</h3>
+                                    <p class="text-xs text-slate-500 italic mb-2">"${loc.notes}"</p>
+                                    <a href="${googleMapsUrl}" target="_blank" class="block text-center bg-slate-900 text-white text-xs py-1.5 rounded font-medium hover:bg-slate-700">Get Directions</a>
+                                </div>
+                            `);
+                    });
+                }
+
+                // Force map resize to fix "grey tiles" issue
+                setTimeout(() => {
+                    if (mapRef.current) {
+                        mapRef.current.invalidateSize();
+                    }
+                }, 100);
 
                 // Cleanup on unmount
                 return () => {
-                    map.remove();
+                    if (mapRef.current) {
+                        mapRef.current.remove();
+                        mapRef.current = null;
+                    }
                 };
             }, [locations, airbnb]);
 
             return (
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-2 h-[600px] relative z-0">
                     <div id="map-container" className="w-full h-full rounded-xl z-0"></div>
+                    
+                    {/* KEY / LEGEND OVERLAY */}
+                    <div className="absolute bottom-6 left-6 bg-white/95 backdrop-blur-sm p-3 rounded-xl shadow-lg border border-slate-100 z-[1000] text-xs">
+                        <div className="font-bold text-slate-800 mb-2 uppercase tracking-wider text-[10px]">Map Key</div>
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-rose-500"></div>
+                                <span className="font-medium text-slate-600">Airbnb (HQ)</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-orange-600"></div>
+                                <span className="font-medium text-slate-600">Food / Eats</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-purple-600"></div>
+                                <span className="font-medium text-slate-600">Drinks / Party</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             );
         };
